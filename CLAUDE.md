@@ -2,54 +2,82 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project vision
+
+This is a **mini ArcGIS Pro** focused solely on geological hazard (地质灾害) assessment for the Changsha-Zhuzhou-Xiangtan (CZT) region. Every feature should mirror an ArcGIS Pro workflow, just scoped to the hazard domain. When adding functionality, ask "how does ArcGIS Pro do this?" and follow that interaction pattern.
+
 ## Build & Run
 
 ```bash
-# Build the solution
 dotnet build cztApp_Solution.slnx
-
-# Build a single project
-dotnet build cztApp1/cztApp1.csproj
-
-# Run the app
 dotnet run --project cztApp1/cztApp1.csproj
 ```
 
-The solution requires the .NET 10.0 SDK with WPF workload. There are no test projects or CI/CD.
+Requires .NET 10.0 SDK with WPF workload. No tests, no CI/CD.
+
+## Git
+
+```bash
+git add -A && git commit -m "..." && git push
+```
+
+SSL backend is configured as `openssl` (schannel had connectivity issues). Repo: `https://github.com/sdjjad/czt-geohazard-system`, branch `main`.
 
 ## Architecture
 
-This is a **WPF (.NET 10, Windows-only)** desktop application for geological hazard analysis in the Changsha-Zhuzhou-Xiangtan (长株潭/CZT) region. It uses code-behind with no MVVM framework — logic lives directly in `.xaml.cs` files.
+**WPF .NET 10, Windows-only.** Code-behind pattern (no MVVM framework). All logic lives in `.xaml.cs` files.
 
-### Startup flow
+### Startup
 
-`App.OnStartup` → shows `SplashWindow` (animated loading dots for 3.2s) → opens `MainWindow` maximized. `MainWindow` has custom window chrome (`WindowStyle="None"` + `WindowChrome`) — title bar drag, min/max/close buttons are all handled manually in `MainWindow.xaml.cs`.
+`App.OnStartup` → `SplashWindow` (3.2s animation) → `MainWindow` maximized.
 
-### Key types
+### Window layout
+
+```
+┌─ 标题栏 (undo/redo + min/max/close) ─────────────┐
+├─ Ribbon tabs: 数据管理 | 地质地震 | 地形地貌 | 土壤植被 | 专题制图 ─┤
+├────────┬───┬──────────────────────────────────────┤
+│ 数据面板  │ ↔ │  地图/分析区 (中央)                   │
+│ (220px) │   │                                      │
+└────────┴───┴──────────────────────────────────────┘
+├─ 状态栏 ───────────────────────────────────────────┘
+```
+
+Left panel: catalog tree + search box + 空间/属性切换按钮. Right attribute panel has been removed.
+
+### Key files
 
 | File | Role |
 |---|---|
-| `Models/GeoAnalysisModels.cs` | `GeoParameter`, `AnalysisConfig`, `StatResult`, `ModuleInfo` — all data models. `ModuleRegistry` is a static catalog of three analysis modules (Geology, Topography, Vegetation), each declaring parameters and available methods. |
-| `Services/GeoAnalysisService.cs` | Generates deterministic mock analysis results (`Random(42)`). `RunAnalysis()` produces per-parameter, per-class `StatResult` rows. `SaveResults()` writes CSV + JSON metadata to disk. |
-| `Views/AnalysisPanel.xaml` (+ `.cs`) | UserControl hosted inside `MainWindow`'s `AnalysisHost` grid. Loads a `ModuleInfo` to populate parameter checkboxes, method dropdown, and output config. Running analysis fills a `DataGrid` with `StatResult` rows. |
-| `MainWindow.xaml` (+ `.cs`) | Main shell: ribbon tabs (数据管理, 地质地震, 地形地貌, 土壤植被, 专题制图), left data panel with TreeView, center map placeholder, right attribute panel, status bar. Undo/redo stacks track operation names (UI only, not wired to data mutations). |
-| `SystemIconProvider.cs` | P/Invoke into `shell32.dll`/`user32.dll`/`gdi32.dll` to extract system file/folder icons as WPF `BitmapSource`. |
-| `Styles/` | XAML resource dictionaries: `Brushes.xaml` (color palette), `ButtonStyles.xaml` (QAT and Ribbon button templates), `TabStyles.xaml` (ribbon tab items + group label), `TreeStyles.xaml` (custom TreeViewItem with expand arrows and file/folder icons). |
+| `Models/GeoAnalysisModels.cs` | `GeoParameter`, `AnalysisConfig`, `StatResult`, `ModuleInfo`. `ModuleRegistry` catalogs three modules (Geology, Topography, Vegetation) with their parameters and analysis methods. |
+| `Services/GeoAnalysisService.cs` | Deterministic mock analysis (`Random(42)`). `RunAnalysis()` produces per-parameter, per-class `StatResult` rows. `SaveResults()` writes CSV + JSON. **Real analysis algorithms are not implemented yet.** |
+| `Views/AnalysisPanel.xaml` | UserControl hosted in `MainWindow.AnalysisHost`. Parameter checkboxes, method/datasource dropdowns, output config, DataGrid for results. |
+| `MainWindow.xaml` (+ `.cs`) | Main shell. Ribbon tabs, catalog tree, map placeholder, undo/redo (UI-only stacks). |
+| `SystemIconProvider.cs` | P/Invoke `shell32.dll`/`user32.dll`/`gdi32.dll`. `GetIcon(path)` returns the **real Windows system icon** (16×16) for any file or folder — cached via `ConcurrentDictionary`. Also exposes `FolderIcon`/`FileIcon` for generic fallback. |
+| `SplashWindow.xaml` | Dark-themed loading screen with animated dots. |
 
-### Data flow
+### Catalog tree (data panel)
 
-1. User clicks a ribbon button (e.g. "地质构造") → `MainWindow` calls `ShowAnalysis(ModuleRegistry.Geology)`
-2. `ShowAnalysis` creates or reuses an `AnalysisPanel`, which calls `LoadModule(module)` to populate UI from `ModuleInfo`
-3. "运行分析" click → `AnalysisPanel.RunAnalysis_Click` builds an `AnalysisConfig`, calls `GeoAnalysisService.RunAnalysis()`, and displays results in DataGrid
-4. "保存结果" click → `GeoAnalysisService.SaveResults()` writes CSV + JSON
+The left-panel TreeView shows the **real file system** — two root folders defined as constants in `MainWindow.xaml.cs`:
 
-### Data persistence
+- `SpatialDataPath`: `D:\...\数据\空间数据`
+- `AttributeDataPath`: `D:\...\数据\属性数据`
 
-`MainWindow` serializes the data TreeView to `data_store.json` (working directory) via `System.Text.Json`. Imported data nodes persist across sessions. The tree is pre-populated with hardcoded spatial/attribute data nodes from `BuildSpatialTree()` / `BuildAttributeTree()`.
+The 空间数据管理/属性数据管理 toggle buttons switch the tree root. Each node's icon comes from `SystemIconProvider.GetIcon(path)` — so `.shp` shows the ArcGIS icon, `.xlsx` Excel, etc. Lazy loading: subdirectories are loaded on expand via `OnDirExpanded`. The TreeView's `ItemContainerStyle` is defined inline in `MainWindow.xaml` (no external TreeStyles dependency).
 
-### UI conventions
+### Styles
 
-- Icons: PNG resources under `Resources/` (24×24-ish), plus Segoe MDL2 Assets glyphs (`&#xE8BB;` = close X, `&#xE922;` = maximize, etc.)
-- Font: Microsoft YaHei UI throughout
-- Accent color: `#1565C0` (blue)
-- Custom `ContextMenu` and `MenuItem` styles in `MainWindow.xaml` override WPF defaults to remove the icon column gutter and ensure white backgrounds
+`Styles/Brushes.xaml`, `Styles/ButtonStyles.xaml`, `Styles/TabStyles.xaml` are merged into `MainWindow.xaml`'s resources. `TreeStyles.xaml` was deleted — the catalog TreeView has its template inline.
+
+Brushes: `AccentBlue` = `#1565C0`, `AppBg` = `#F2F2F2`. Font: Microsoft YaHei UI.
+
+### Analysis flow
+
+1. Ribbon button click (e.g. "地质构造") → `ShowAnalysis(ModuleRegistry.Geology)`
+2. `AnalysisPanel.LoadModule()` populates UI from `ModuleInfo`
+3. "运行分析" → builds `AnalysisConfig` → `GeoAnalysisService.RunAnalysis()` → DataGrid
+4. "保存结果" → `GeoAnalysisService.SaveResults()` → CSV + JSON
+
+### Undo/redo
+
+Title bar QAT buttons manage `_undoStack`/`_redoStack` (max 20 entries). Currently track operation names only — not wired to actual data mutations.
