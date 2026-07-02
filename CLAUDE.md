@@ -15,13 +15,24 @@ dotnet run --project cztApp1/cztApp1.csproj
 
 Requires .NET 10.0 SDK with WPF workload. No tests, no CI/CD.
 
-## Git
+## Git — automated version control
+
+**After EVERY code change**, auto-commit and push without asking the user for confirmation:
 
 ```bash
-git add -A && git commit -m "..." && git push
+git add -A
+git commit -m "<clean English message describing what changed and why>"
+git push
 ```
 
-SSL backend is configured as `openssl` (schannel had connectivity issues). Repo: `https://github.com/sdjjad/czt-geohazard-system`, branch `main`.
+Rules:
+- Commit messages must be in English, concise, and descriptive (not "fix stuff").
+- Never skip committing — every logical change gets its own commit.
+- Push immediately after each commit so GitHub always has the latest version.
+- If a change turns out wrong, we revert via git rather than manually undoing.
+- The user should never need to type `git` commands themselves.
+
+SSL backend is configured as `openssl`. Repo: `https://github.com/sdjjad/czt-geohazard-system`, branch `main`.
 
 ## Architecture
 
