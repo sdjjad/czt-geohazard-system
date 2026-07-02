@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        xmlns:views="clr-namespace:cztApp1.Views"
         mc:Ignorable="d"
         Title="长株潭地质灾害系统" Height="650" Width="1100"
         WindowStyle="None"
@@ -682,18 +683,72 @@
                 <Border Grid.Column="2" Background="White">
                     <Grid>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/><RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
+                        <!-- Map header -->
                         <Border Grid.Row="0" Background="White" Padding="8,5">
                             <TextBlock Text="地图视图" FontWeight="SemiBold" FontSize="12" Foreground="#1A1A1A"/>
                         </Border>
+                        <!-- Map content area -->
                         <Grid Grid.Row="1">
-                            <Border x:Name="MapPlaceholder" Background="White" Margin="8">
-                                <TextBlock Text="地图区域" Foreground="#CCCCCC" FontSize="20"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
+                            <views:MapView x:Name="MapViewControl" />
                             <Grid x:Name="AnalysisHost"/>
                         </Grid>
+                        <!-- Layer list panel (like ArcGIS Pro Contents pane) -->
+                        <Border Grid.Row="2" x:Name="LayerListPanel" Background="#FAFAFA"
+                                BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" MaxHeight="160">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <Border Grid.Row="0" Padding="8,4">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="图层列表" FontSize="11"
+                                                   FontWeight="SemiBold" Foreground="#333"/>
+                                        <Button Grid.Column="1" Content="清空" FontSize="10"
+                                                Background="Transparent" BorderBrush="#C0C0C0"
+                                                BorderThickness="1" Padding="8,2" Cursor="Hand"
+                                                x:Name="ClearAllLayersBtn"/>
+                                    </Grid>
+                                </Border>
+                                <ListBox Grid.Row="1" x:Name="LayerListBox"
+                                         Background="Transparent" BorderThickness="0"
+                                         FontSize="11" MaxHeight="120"
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,1">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="▬" FontSize="10"
+                                                           VerticalAlignment="Center" Margin="4,0,6,0"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding Name}"
+                                                           VerticalAlignment="Center" Foreground="#333"/>
+                                                <TextBlock Grid.Column="2"
+                                                           Text="{Binding Type, Converter={x:Static views:MapLayerTypeConverter.Instance}}"
+                                                           FontSize="9" Foreground="#999" Margin="6,0"/>
+                                                <Button Grid.Column="3" Content="✕" FontSize="10" Width="20" Height="20"
+                                                        Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                                        Foreground="#999"
+                                                        Tag="{Binding}"
+                                                        x:Name="RemoveLayerBtn"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </Border>
                     </Grid>
                 </Border>
             </Grid>
@@ -710,7 +765,7 @@
                     </ItemsPanelTemplate>
                 </StatusBar.ItemsPanel>
                 <StatusBarItem Grid.Column="0">
-                    <TextBlock Text="就绪" Foreground="#555555"/>
+                    <TextBlock x:Name="StatusBar1" Text="就绪" Foreground="#555555"/>
                 </StatusBarItem>
                 <StatusBarItem Grid.Column="1">
                     <TextBlock Text="比例 1:50000" Foreground="#555555" Margin="6,0"/>

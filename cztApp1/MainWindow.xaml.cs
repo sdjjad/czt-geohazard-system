@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using cztApp1.Models;
+using cztApp1.Services;
 using cztApp1.Views;
 
 namespace cztApp1
@@ -19,6 +20,8 @@ namespace cztApp1
         private const string AttributeDataPath = @"D:\geomatics_task\地理信息工程及应用\2322050202于景赫-12组-长株潭地质灾害（土壤植被）\数据\属性数据";
         private string _currentRootPath = SpatialDataPath;
 
+        private MapLayerService _mapLayerService = null!;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -27,11 +30,37 @@ namespace cztApp1
             UpdateUndoRedoState();
             LoadDirectoryTree(SpatialDataPath);
 
+            // Initialize map layer service
+            _mapLayerService = new MapLayerService(MapViewControl);
+            _mapLayerService.LayersChanged += OnLayersChanged;
+            LayerListBox.ItemsSource = _mapLayerService.Layers;
+            ClearAllLayersBtn.Click += ClearAllLayers_Click;
+
+            // Hook up tree double-click
+            DataTree.MouseDoubleClick += DataTree_MouseDoubleClick;
+
             StateChanged += (s, e) =>
             {
                 MaxBtn.Content = WindowState == WindowState.Maximized ? "" : "";
                 MaxBtn.ToolTip = WindowState == WindowState.Maximized ? "还原" : "最大化";
             };
+        }
+
+        private void OnLayersChanged()
+        {
+            // Update status bar
+            Dispatcher.Invoke(() =>
+            {
+                var count = _mapLayerService.Layers.Count;
+                if (StatusBar1 != null)
+                    StatusBar1.Text = count > 0 ? $"已加载 {count} 个图层" : "就绪";
+            });
+        }
+
+        private async void ClearAllLayers_Click(object sender, RoutedEventArgs e)
+        {
+            await _mapLayerService.ClearAllAsync();
+            RecordOperation("清空所有图层");
         }
 
         private void UpdateUndoRedoState()
@@ -243,25 +272,92 @@ namespace cztApp1
         private TreeViewItem CreateTreeItem(string path, bool isRoot = false)
         {
             var name = isRoot ? Path.GetFileName(path) : Path.GetFileName(path);
-            // Build header with icon + text
+
+            // Determine display icon and data type
+            ImageSource? icon = null;
+            var dataType = SpatialDataHelper.ClassifyFile(path);
+            var isSpatialFile = SpatialDataHelper.IsSpatialDataFile(path);
+
+            if (isSpatialFile)
+            {
+                // Use distinct icon for vector vs raster
+                icon = dataType == SpatialDataType.Vector
+                    ? SystemIconProvider.GetIcon(path)  // .shp has ArcGIS icon in Windows
+                    : SystemIconProvider.GetIcon(path); // .tif icon
+            }
+            else
+            {
+                icon = SystemIconProvider.GetIcon(path);
+            }
+
+            // Build header
             var sp = new StackPanel { Orientation = Orientation.Horizontal };
             var img = new Image
             {
-                Source = SystemIconProvider.GetIcon(path),
+                Source = icon,
                 Width = 16, Height = 16,
                 Margin = new Thickness(0, 0, 4, 0),
                 Stretch = System.Windows.Media.Stretch.Uniform
             };
             sp.Children.Add(img);
-            sp.Children.Add(new TextBlock { Text = name, VerticalAlignment = VerticalAlignment.Center });
+
+            // Add type badge for spatial data files
+            if (isSpatialFile)
+            {
+                var typeLabel = SpatialDataHelper.GetDataTypeLabel(dataType);
+                var badgeColor = dataType == SpatialDataType.Vector
+                    ? Color.FromRgb(0x15, 0x65, 0xC0)   // blue for vector
+                    : Color.FromRgb(0x2E, 0x7D, 0x32);   // green for raster
+
+                sp.Children.Add(new TextBlock
+                {
+                    Text = name,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Foreground = new SolidColorBrush(Color.FromRgb(0x1A, 0x1A, 0x1A))
+                });
+                sp.Children.Add(new TextBlock
+                {
+                    Text = $" [{typeLabel}]",
+                    VerticalAlignment = VerticalAlignment.Center,
+                    FontSize = 9,
+                    Foreground = new SolidColorBrush(badgeColor)
+                });
+            }
+            else
+            {
+                sp.Children.Add(new TextBlock
+                {
+                    Text = name,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Foreground = new SolidColorBrush(Color.FromRgb(0x1A, 0x1A, 0x1A))
+                });
+            }
+
             var item = new TreeViewItem
             {
                 Header = sp,
-                Tag = path,        // full path
+                Tag = path,
                 FontWeight = isRoot ? FontWeights.SemiBold : FontWeights.Normal
             };
 
-            // Lazy load: add dummy child so expand arrow appears
+            // Store data type info for quick access
+            if (isSpatialFile)
+            {
+                item.Tag = new SpatialFileInfo
+                {
+                    FilePath = path,
+                    DisplayName = Path.GetFileNameWithoutExtension(path),
+                    DataType = dataType
+                };
+            }
+
+            // Add context menu for spatial data files
+            if (isSpatialFile)
+            {
+                item.ContextMenu = CreateDataItemContextMenu(path, dataType);
+            }
+
+            // Lazy load: add dummy child so expand arrow appears for directories
             if (Directory.Exists(path))
             {
                 try
@@ -280,6 +376,102 @@ namespace cztApp1
             return item;
         }
 
+        /// <summary>
+        /// Create a right-click context menu for spatial data items.
+        /// </summary>
+        private ContextMenu CreateDataItemContextMenu(string path, SpatialDataType dataType)
+        {
+            var menu = new ContextMenu();
+            var typeLabel = SpatialDataHelper.GetDataTypeLabel(dataType);
+
+            var addItem = new MenuItem { Header = $"添加到地图 ({typeLabel})" };
+            addItem.Click += async (s, e) => await AddDataToMap(path);
+            menu.Items.Add(addItem);
+
+            var zoomItem = new MenuItem { Header = "缩放至图层" };
+            zoomItem.Click += async (s, e) =>
+            {
+                var layer = _mapLayerService.Layers.FirstOrDefault(l => l.FilePath == path);
+                if (layer != null) await _mapLayerService.ZoomToLayerAsync(layer);
+            };
+            menu.Items.Add(zoomItem);
+
+            menu.Items.Add(new Separator());
+
+            var propsItem = new MenuItem { Header = "属性" };
+            propsItem.Click += (s, e) =>
+            {
+                MessageBox.Show($"文件: {path}\n类型: {typeLabel}",
+                    "数据属性", MessageBoxButton.OK, MessageBoxImage.Information);
+            };
+            menu.Items.Add(propsItem);
+
+            return menu;
+        }
+
+        /// <summary>
+        /// TreeView double-click handler — add spatial data to map.
+        /// </summary>
+        private async void DataTree_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton != MouseButton.Left) return;
+
+            var clickedItem = FindAncestor<TreeViewItem>((DependencyObject)e.OriginalSource);
+            if (clickedItem == null) return;
+
+            string? filePath = null;
+
+            if (clickedItem.Tag is SpatialFileInfo sfInfo)
+            {
+                filePath = sfInfo.FilePath;
+            }
+            else if (clickedItem.Tag is string strPath && !strPath.Equals("__dummy__"))
+            {
+                // Check if it's a spatial file by extension
+                if (SpatialDataHelper.IsSpatialDataFile(strPath))
+                    filePath = strPath;
+            }
+
+            if (!string.IsNullOrEmpty(filePath))
+            {
+                await AddDataToMap(filePath);
+            }
+        }
+
+        /// <summary>
+        /// Add a spatial data file to the map.
+        /// </summary>
+        private async Task AddDataToMap(string filePath)
+        {
+            try
+            {
+                var layer = await _mapLayerService.AddLayerAsync(filePath);
+                if (layer != null)
+                {
+                    RecordOperation($"添加图层: {layer.Name}");
+                    StatusBar1.Text = $"已添加图层: {layer.Name} ({SpatialDataHelper.GetDataTypeLabel(layer.Type)})";
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"无法添加图层: {ex.Message}", "错误",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// Helper to walk up the visual tree to find a parent of a given type.
+        /// </summary>
+        private static T? FindAncestor<T>(DependencyObject current) where T : DependencyObject
+        {
+            while (current != null)
+            {
+                if (current is T t) return t;
+                current = VisualTreeHelper.GetParent(current);
+            }
+            return null;
+        }
+
         private void OnDirExpanded(object sender, RoutedEventArgs e)
         {
             var item = (TreeViewItem)sender;
@@ -287,7 +479,7 @@ namespace cztApp1
             if (item.Items.Count == 1 && item.Items[0] is TreeViewItem dummy && "__dummy__".Equals(dummy.Tag))
             {
                 item.Items.Clear();
-                var path = item.Tag as string;
+                var path = (item.Tag as SpatialFileInfo)?.FilePath ?? item.Tag as string;
                 if (string.IsNullOrEmpty(path)) return;
 
                 try
@@ -299,6 +491,8 @@ namespace cztApp1
                     }
                     foreach (var file in Directory.GetFiles(path))
                     {
+                        // Skip shapefile companion files and raster sidecar files
+                        if (SpatialDataHelper.IsCompanionFile(file)) continue;
                         try { item.Items.Add(CreateTreeItem(file)); } catch { }
                     }
                 }
@@ -323,14 +517,20 @@ namespace cztApp1
             if (AnalysisHost.Children.Count == 0)
             {
                 var panel = new AnalysisPanel();
-                panel.Closed += () => { AnalysisHost.Children.Clear(); MapPlaceholder.Visibility = Visibility.Visible; };
+                panel.Closed += () =>
+                {
+                    AnalysisHost.Children.Clear();
+                    MapViewControl.Visibility = Visibility.Visible;
+                    LayerListPanel.Visibility = Visibility.Visible;
+                };
                 AnalysisHost.Children.Add(panel);
             }
             else if (AnalysisHost.Children[0] is AnalysisPanel existing)
             {
                 existing.LoadModule(module);
             }
-            MapPlaceholder.Visibility = Visibility.Collapsed;
+            MapViewControl.Visibility = Visibility.Collapsed;
+            LayerListPanel.Visibility = Visibility.Collapsed;
         }
 
         private void Geo_Btn_Click(object sender, RoutedEventArgs e) => ShowAnalysis(ModuleRegistry.Geology);
