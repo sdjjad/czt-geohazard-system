@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -Command \"Invoke-WebRequest -Uri 'https://img.icons8.com/plasticine/100/folder-invoices.png' -OutFile 'D:\\\\geomatics_task\\\\地理信息工程及应用\\\\czt_geohazrd_system\\\\cztApp_Solution\\\\cztApp1\\\\Resources\\\\folder.png' -Headers @{'Referer'='https://igoutu.cn/'}; Invoke-WebRequest -Uri 'https://img.icons8.com/plasticine/100/opened-folder.png' -OutFile 'D:\\\\geomatics_task\\\\地理信息工程及应用\\\\czt_geohazrd_system\\\\cztApp_Solution\\\\cztApp1\\\\Resources\\\\folder-open.png' -Headers @{'Referer'='https://igoutu.cn/'}; Invoke-WebRequest -Uri 'https://img.icons8.com/plasticine/100/document.png' -OutFile 'D:\\\\geomatics_task\\\\地理信息工程及应用\\\\czt_geohazrd_system\\\\cztApp_Solution\\\\cztApp1\\\\Resources\\\\file.png' -Headers @{'Referer'='https://igoutu.cn/'}; \\(Get-Item 'D:\\\\geomatics_task\\\\地理信息工程及应用\\\\czt_geohazrd_system\\\\cztApp_Solution\\\\cztApp1\\\\Resources\\\\*'\\).Length\" 2>&1)",
+      "Bash(powershell -Command \"Get-Process czt* -ErrorAction SilentlyContinue | Stop-Process -Force\" 2>&1)"
+    ]
+  }
+}

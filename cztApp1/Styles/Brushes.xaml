@@ -1,0 +1,12 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <SolidColorBrush x:Key="BgHover"       Color="#F0F0F0"/>
+    <SolidColorBrush x:Key="BgPressed"     Color="#E0E0E0"/>
+    <SolidColorBrush x:Key="TextPrimary"   Color="#1A1A1A"/>
+    <SolidColorBrush x:Key="TextSecondary" Color="#555555"/>
+    <SolidColorBrush x:Key="TextMuted"     Color="#999999"/>
+    <SolidColorBrush x:Key="AccentBlue"    Color="#1565C0"/>
+    <SolidColorBrush x:Key="AppBg"         Color="#F2F2F2"/>
+
+</ResourceDictionary>
