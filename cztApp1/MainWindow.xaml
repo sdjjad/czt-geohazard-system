@@ -843,6 +843,7 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" x:Name="SymbolPanelTitle"
+                                       Text="符号系统"
                                        Style="{StaticResource PanelTitleStyle}"/>
                             <StackPanel Grid.Column="2" Orientation="Horizontal">
                                 <Button Style="{StaticResource PanelIconBtnStyle}"
