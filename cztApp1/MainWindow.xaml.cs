@@ -36,6 +36,13 @@ namespace cztApp1
             LayerTreeView.ItemsSource = _mapLayerService.Layers;
             SetupLayerTreeViewEvents();
 
+            // 地图坐标更新 → 状态栏
+            MapViewControl.CoordChanged += (coord, scale) =>
+            {
+                StatusCoord.Text = coord;
+                StatusScale.Text = scale;
+            };
+
 
             // Hook up tree double-click
             DataTree.MouseDoubleClick += DataTree_MouseDoubleClick;

@@ -17,6 +17,7 @@ public partial class MapView : UserControl
     private bool _mapReady;
     private readonly Queue<string> _pendingScripts = new();
     private int _layerIdCounter;
+    public event Action<string, string>? CoordChanged;
 
         public MapView()
     {
@@ -57,6 +58,18 @@ public partial class MapView : UserControl
                     WebMap.CoreWebView2.ExecuteScriptAsync(script);
                 }
             });
+        }
+        else if (msg != null && msg.StartsWith("\"coord:"))
+        {
+            var parts = msg.Trim('"').Split(':')[1].Split(',');
+            if (parts.Length >= 4)
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    CoordChanged?.Invoke($"{parts[0]}° E  {parts[1]}° N",
+                                         $"比例 1:{parts[3]}");
+                });
+            }
         }
     }
 
@@ -390,6 +403,33 @@ function clearAllLayers() {
 
 // Notify C# that the map is ready
 try { window.chrome.webview.postMessage('""map-ready""'); } catch(e) {}
+
+// 坐标和比例尺（延迟启动，避免影响地图初始化）
+var coordTimer = 0;
+function sendCoord(lng, lat, zoom, scale) {
+  var now = Date.now();
+  if (now - coordTimer < 150) return;
+  coordTimer = now;
+  try {
+    window.chrome.webview.postMessage(JSON.stringify('coord:' + lng + ',' + lat + ',' + zoom + ',' + scale));
+  } catch(e) {}
+}
+function calcScale(lat, zoom) {
+  return Math.round(156543.03392 * Math.cos(lat * Math.PI / 180) / Math.pow(2, zoom));
+}
+setTimeout(function() {
+  map.on('mousemove', function(e) {
+    var lat = e.latlng.lat.toFixed(6);
+    var lng = e.latlng.lng.toFixed(6);
+    sendCoord(lng, lat, map.getZoom(), calcScale(e.latlng.lat, map.getZoom()));
+  });
+  map.on('zoomend', function() {
+    var c = map.getCenter();
+    sendCoord(c.lng.toFixed(6), c.lat.toFixed(6), map.getZoom(), calcScale(c.lat, map.getZoom()));
+  });
+  var c = map.getCenter();
+  sendCoord(c.lng.toFixed(6), c.lat.toFixed(6), map.getZoom(), calcScale(c.lat, map.getZoom()));
+}, 800);
 </script>
 </body>
 </html>");
