@@ -301,37 +301,13 @@ namespace cztApp1
             };
             sp.Children.Add(img);
 
-            // Add type badge for spatial data files
-            if (isSpatialFile)
+            // 文件名（不加类型标签，跟 ArcGIS Pro 一样的干净显示）
+            sp.Children.Add(new TextBlock
             {
-                var typeLabel = SpatialDataHelper.GetDataTypeLabel(dataType);
-                var badgeColor = dataType == SpatialDataType.Vector
-                    ? Color.FromRgb(0x15, 0x65, 0xC0)   // blue for vector
-                    : Color.FromRgb(0x2E, 0x7D, 0x32);   // green for raster
-
-                sp.Children.Add(new TextBlock
-                {
-                    Text = name,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Foreground = new SolidColorBrush(Color.FromRgb(0x1A, 0x1A, 0x1A))
+                Text = name,
+                VerticalAlignment = VerticalAlignment.Center,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x1A, 0x1A, 0x1A))
                 });
-                sp.Children.Add(new TextBlock
-                {
-                    Text = $" [{typeLabel}]",
-                    VerticalAlignment = VerticalAlignment.Center,
-                    FontSize = 9,
-                    Foreground = new SolidColorBrush(badgeColor)
-                });
-            }
-            else
-            {
-                sp.Children.Add(new TextBlock
-                {
-                    Text = name,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Foreground = new SolidColorBrush(Color.FromRgb(0x1A, 0x1A, 0x1A))
-                });
-            }
 
             var item = new TreeViewItem
             {

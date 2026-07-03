@@ -26,6 +26,7 @@
                 <ResourceDictionary Source="Styles/Brushes.xaml"/>
                 <ResourceDictionary Source="Styles/ButtonStyles.xaml"/>
                 <ResourceDictionary Source="Styles/TabStyles.xaml"/>
+                <ResourceDictionary Source="Styles/PanelStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
             <Style x:Key="CaptionBtn" TargetType="Button">
@@ -432,20 +433,9 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- 数据管理面板 -->
-                <Border Grid.Column="0" CornerRadius="6" Margin="6,2,0,4" Padding="8,6"
-                        Focusable="True" MouseDown="DataPanel_GotFocus">
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <Setter Property="Background" Value="#FBFBFB"/>
-                            <Setter Property="BorderBrush" Value="#C8C8C8"/>
-                            <Setter Property="BorderThickness" Value="1"/>
-                            <Style.Triggers>
-                                <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                                    <Setter Property="BorderBrush" Value="#64B5F6"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
+                <Border Grid.Column="0" Margin="6,2,0,4"
+                        Style="{StaticResource PanelBorderStyle}"
+                        MouseDown="DataPanel_GotFocus">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
@@ -459,69 +449,24 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="数据管理" FontSize="15"
-                                       Foreground="#1A1A1A" VerticalAlignment="Center"/>
-<!-- 导入按钮已移除 -->
+                            <TextBlock Grid.Column="0" Text="数据管理"
+                                       Style="{StaticResource PanelTitleStyle}"/>
                             <StackPanel Grid.Column="3" Orientation="Horizontal">
-                                <!-- Options 下拉 -->
-                                <Button Width="22" Height="22" Padding="0"
-                                        Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                <Button Style="{StaticResource PanelIconBtnStyle}"
                                         Click="PanelOptions_Click" ToolTip="选项">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border x:Name="bd" Background="Transparent"
-                                                    CornerRadius="3" Padding="2">
-                                                <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets"
-                                                           FontSize="8" Foreground="#444444"
-                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="bd" Property="Background" Value="#E0E0E0"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Button.Template>
+                                    <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets"
+                                               FontSize="8" Foreground="#444444"/>
                                 </Button>
-                                <!-- Auto-hide -->
-                                <Button x:Name="AutoHideBtn" Width="22" Height="22" Padding="0"
-                                        Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                <Button x:Name="AutoHideBtn"
+                                        Style="{StaticResource PanelIconBtnStyle}"
                                         Click="AutoHide_Click" ToolTip="自动隐藏">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border x:Name="bd" Background="Transparent"
-                                                    CornerRadius="3" Padding="2">
-                                                <TextBlock Text="&#xE77A;" FontFamily="Segoe MDL2 Assets"
-                                                           FontSize="10" Foreground="#444444"
-                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="bd" Property="Background" Value="#E0E0E0"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Button.Template>
+                                    <TextBlock Text="&#xE77A;" FontFamily="Segoe MDL2 Assets"
+                                               FontSize="10" Foreground="#444444"/>
                                 </Button>
-                                <!-- Close -->
-                                <Button Width="22" Height="22" Padding="0"
-                                        Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                <Button Style="{StaticResource PanelIconBtnStyle}"
                                         Click="PanelClose_Click" ToolTip="关闭面板">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border x:Name="bd" Background="Transparent"
-                                                    CornerRadius="3" Padding="2">
-                                                <TextBlock Text="&#xE8BB;" FontFamily="Segoe MDL2 Assets"
-                                                           FontSize="10" Foreground="#444444"
-                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="bd" Property="Background" Value="#E0E0E0"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Button.Template>
+                                    <TextBlock Text="&#xE8BB;" FontFamily="Segoe MDL2 Assets"
+                                               FontSize="10" Foreground="#444444"/>
                                 </Button>
                             </StackPanel>
                         </Grid>
