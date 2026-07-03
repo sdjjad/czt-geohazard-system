@@ -287,8 +287,12 @@ public partial class MapView : UserControl
     /// <summary>
     /// Build self-contained Leaflet HTML with layer management JS.
     /// </summary>
-    private static string BuildLeafletHtml()
+    private string BuildLeafletHtml()
     {
+        // 加载本地 Leaflet 文件（无需网络）
+        var leafletCss = ReadResource("leaflet.css");
+        var leafletJs = ReadResource("leaflet.js");
+
         var sb = new StringBuilder();
         sb.Append(@"<!DOCTYPE html>
 <html lang=""zh-CN"">
@@ -296,17 +300,20 @@ public partial class MapView : UserControl
 <meta charset=""UTF-8"">
 <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
 <title>Map</title>
-<link rel=""stylesheet"" href=""https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"" />
+<style>");
+        sb.Append(leafletCss);
+        sb.Append(@"</style>
 <style>
   html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; }
-  #map { width:100%; height:100%; background:#F5F5F5; }
-  .map-loaded { background:#FFFFFF !important; }
+  #map { width:100%; height:100%; background:#FFFFFF; }
 </style>
 </head>
 <body>
 <div id=""map""></div>
 
-<script src=""https://unpkg.com/leaflet@1.9.4/dist/leaflet.js""></script>
+<script>");
+        sb.Append(leafletJs);
+        sb.Append(@"</script>
 <script>
 var map = L.map('map', {
   center: [27.9, 113.0],
@@ -315,14 +322,7 @@ var map = L.map('map', {
   attributionControl: false
 });
 
-// Base tile layer — OpenStreetMap (需要网络)
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  opacity: 0.4
-}).addTo(map);
-
-// 地图加载完成标记（变白表示 Leaflet 初始化成功）
-document.getElementById('map').classList.add('map-loaded');
+// 无底图 — CZT 本地系统，纯白背景即可
 
 // Layer registry
 var layers = {};
@@ -394,6 +394,16 @@ try { window.chrome.webview.postMessage('""map-ready""'); } catch(e) {}
 </body>
 </html>");
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// 读取 Resources 目录中的文件内容
+    /// </summary>
+    private static string ReadResource(string filename)
+    {
+        var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", filename);
+        if (File.Exists(path)) return File.ReadAllText(path);
+        return "";
     }
 
     #endregion

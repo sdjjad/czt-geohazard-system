@@ -23,6 +23,12 @@
 
   <ItemGroup>
     <Resource Include="Resources\*.png" />
+    <Content Include="Resources\leaflet.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\leaflet.css">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>
