@@ -162,7 +162,9 @@ public class MapLayerService
     {
         try
         {
-            var layerId = await _mapView.AddVectorLayerAsync(name, filePath);
+            // 创建默认符号，ArcGIS Runtime 会根据几何类型自动选择渲染器
+            var defaultStyle = new VectorSymbol();
+            var layerId = await _mapView.AddVectorLayerAsync(name, filePath, defaultStyle);
             return layerId;
         }
         catch (Exception ex)
