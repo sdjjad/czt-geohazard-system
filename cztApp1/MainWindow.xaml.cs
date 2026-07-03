@@ -201,43 +201,59 @@ namespace cztApp1
             switch (tag)
             {
                 case "Data":
-                    TogglePanelColumn(0, "LeftSplitter", 220);
+                    // 复用 PanelClose_Click 逻辑：找到数据面板 Border 并切换
+                    var dataBorder = MainContentGrid.Children.OfType<Border>().FirstOrDefault();
+                    if (dataBorder != null)
+                    {
+                        bool wasVisible = dataBorder.Visibility == Visibility.Visible;
+                        dataBorder.Visibility = wasVisible ? Visibility.Collapsed : Visibility.Visible;
+                        MainContentGrid.ColumnDefinitions[0].MinWidth = wasVisible ? 0 : 150;
+                        MainContentGrid.ColumnDefinitions[0].Width = wasVisible ? new GridLength(0) : new GridLength(220);
+                        if (FindName("LeftSplitter") is GridSplitter ls)
+                            ls.Visibility = wasVisible ? Visibility.Collapsed : Visibility.Visible;
+                    }
                     break;
+
                 case "Map":
                     MapViewControl.Visibility = MapViewControl.Visibility == Visibility.Visible
                         ? Visibility.Collapsed : Visibility.Visible;
                     break;
+
                 case "Layer":
-                    TogglePanelColumn(4, "RightOuterSplitter", 220);
+                    // 复用 LayerPanelClose_Click 逻辑
+                    var layerBorder = RightPanelGrid.Children.OfType<Border>().FirstOrDefault();
+                    if (layerBorder != null)
+                    {
+                        bool wasVisible = layerBorder.Visibility == Visibility.Visible;
+                        layerBorder.Visibility = wasVisible ? Visibility.Collapsed : Visibility.Visible;
+                        AdjustRightColumn();
+                        if (wasVisible) break;
+                        // 显示时恢复列宽
+                        MainContentGrid.ColumnDefinitions[4].MinWidth = 150;
+                        MainContentGrid.ColumnDefinitions[4].Width = new GridLength(220);
+                        if (FindName("RightOuterSplitter") is GridSplitter rs)
+                            rs.Visibility = Visibility.Visible;
+                    }
                     break;
+
                 case "Symbol":
                     if (SymbolPanelHost.Visibility == Visibility.Visible)
-                    {
-                        SymbolPanelHost.Visibility = Visibility.Collapsed;
-                        RightSplitter.Visibility = Visibility.Collapsed;
-                        RightPanelGrid.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
-                        RightPanelGrid.RowDefinitions[2].Height = GridLength.Auto;
-                    }
+                        SymbolPanelClose_Click(sender, e);
                     else
                     {
+                        // 打开符号面板（不设置内容，只显示空面板）
+                        MainContentGrid.ColumnDefinitions[4].MinWidth = 150;
+                        MainContentGrid.ColumnDefinitions[4].Width = new GridLength(220);
+                        if (FindName("RightOuterSplitter") is GridSplitter rs2)
+                            rs2.Visibility = Visibility.Visible;
                         SymbolPanelHost.Visibility = Visibility.Visible;
                         RightSplitter.Visibility = Visibility.Visible;
                         RightPanelGrid.RowDefinitions[0].Height = new GridLength(3, GridUnitType.Star);
                         RightPanelGrid.RowDefinitions[2].Height = new GridLength(1, GridUnitType.Star);
-                        if (MainContentGrid.ColumnDefinitions[4].Width.Value < 1)
-                            MainContentGrid.ColumnDefinitions[4].Width = new GridLength(220);
+                        SymbolPanelTitle.Text = "符号系统";
                     }
                     break;
             }
-        }
-
-        private void TogglePanelColumn(int col, string splitterName, double width)
-        {
-            var colDef = MainContentGrid.ColumnDefinitions[col];
-            bool wasOpen = colDef.Width.Value > 0;
-            colDef.Width = wasOpen ? new GridLength(0) : new GridLength(width);
-            if (FindName(splitterName) is GridSplitter gs)
-                gs.Visibility = wasOpen ? Visibility.Collapsed : Visibility.Visible;
         }
 
         private void SymbolAutoHide_Click(object sender, RoutedEventArgs e)
@@ -301,11 +317,13 @@ namespace cztApp1
 
             if (!layerVisible && !symbolVisible)
             {
+                MainContentGrid.ColumnDefinitions[4].MinWidth = 0;
                 MainContentGrid.ColumnDefinitions[4].Width = new GridLength(0);
                 RightOuterSplitter.Visibility = Visibility.Collapsed;
             }
             else
             {
+                MainContentGrid.ColumnDefinitions[4].MinWidth = 150;
                 MainContentGrid.ColumnDefinitions[4].Width = new GridLength(220);
                 RightOuterSplitter.Visibility = Visibility.Visible;
             }
