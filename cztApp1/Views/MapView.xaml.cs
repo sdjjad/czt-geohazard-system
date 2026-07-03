@@ -384,12 +384,17 @@ function addVectorLayer(id, name, geojsonStr, styleProps) {
   var props = styleProps || {};
   var lyr = L.geoJSON(geojson, {
     style: function(feature) {
-      return {
+      var gt = feature.geometry.type;
+      var s = {
         color: props.strokeColor || '#1565C0',
-        weight: props.strokeWidth || 2,
-        fillColor: props.fillColor || '#64B5F6',
-        fillOpacity: props.fillOpacity || 0.3
+        weight: props.strokeWidth || 2
       };
+      // 只有面状几何类型才设置填充属性
+      if (gt === 'Polygon' || gt === 'MultiPolygon') {
+        s.fillColor = props.fillColor || '#64B5F6';
+        s.fillOpacity = props.fillOpacity || 0.3;
+      }
+      return s;
     },
     pointToLayer: function(feature, latlng) {
       return L.circleMarker(latlng, {

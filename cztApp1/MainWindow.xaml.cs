@@ -179,6 +179,7 @@ namespace cztApp1
             RightSplitter.Visibility = Visibility.Collapsed;
             RightPanelGrid.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
             RightPanelGrid.RowDefinitions[2].Height = GridLength.Auto;
+            AdjustRightColumn();
         }
 
         private void LayerOptions_Click(object sender, RoutedEventArgs e)
@@ -201,6 +202,31 @@ namespace cztApp1
             {
                 var border = FindParent<Border>(btn);
                 if (border != null) border.Visibility = Visibility.Collapsed;
+            }
+            AdjustRightColumn();
+        }
+
+        /// <summary>
+        /// 检查右侧面板区：如果图层面板和符号面板都隐藏，则折叠右侧列
+        /// </summary>
+        private void AdjustRightColumn()
+        {
+            // 图层面板是 RightPanelGrid 之下的第一个 Border（Row 0），需判断其 Visibility
+            bool layerVisible = false;
+            if (RightPanelGrid.Children.Count > 0 && RightPanelGrid.Children[0] is Border layerBorder)
+                layerVisible = layerBorder.Visibility == Visibility.Visible;
+
+            bool symbolVisible = SymbolPanelHost.Visibility == Visibility.Visible;
+
+            if (!layerVisible && !symbolVisible)
+            {
+                MainContentGrid.ColumnDefinitions[4].Width = new GridLength(0);
+                RightOuterSplitter.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                MainContentGrid.ColumnDefinitions[4].Width = new GridLength(220);
+                RightOuterSplitter.Visibility = Visibility.Visible;
             }
         }
 
@@ -286,14 +312,9 @@ namespace cztApp1
 
         private void SymbolItem_Click(object sender, MouseButtonEventArgs e)
         {
-            var item = FindParent<TreeViewItem>((DependencyObject)e.OriginalSource);
-            if (item?.DataContext is SymbolItem)
-            {
-                // 找到所属的 MapLayer
-                var layerItem = FindParent<TreeViewItem>(item);
-                if (layerItem?.DataContext is MapLayer layer)
-                    ShowSymbolEditor(layer);
-            }
+            // 直接从 DataContext 取数据，避免 FindParent 在 TreeViewItem 上自匹配的 bug
+            if (sender is FrameworkElement fe && fe.DataContext is SymbolItem sym && sym.Layer is MapLayer layer)
+                ShowSymbolEditor(layer);
         }
 
         private void LayerCheckBox_Changed(object sender, RoutedEventArgs e)
@@ -337,6 +358,12 @@ namespace cztApp1
         private void ShowSymbolEditor(MapLayer layer)
         {
             _currentSymbolLayer = layer;
+            // 确保右侧列可见（可能之前被关闭了）
+            if (MainContentGrid.ColumnDefinitions[4].Width.Value < 1)
+            {
+                MainContentGrid.ColumnDefinitions[4].Width = new GridLength(220);
+                RightOuterSplitter.Visibility = Visibility.Visible;
+            }
             SymbolPanelHost.Visibility = Visibility.Visible;
             RightSplitter.Visibility = Visibility.Visible;
             // 切换行高：图层面板 3 份，符号面板 1 份，分隔条自适应
@@ -742,8 +769,17 @@ namespace cztApp1
                 while (panel is not null && panel is not Border)
                     panel = (panel as FrameworkElement)?.Parent as UIElement;
                 if (panel is Border b)
-                    b.Visibility = b.Visibility == Visibility.Visible
-                        ? Visibility.Collapsed : Visibility.Visible;
+                {
+                    var collapsed = b.Visibility == Visibility.Visible;
+                    b.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
+                    // 调整列宽：面板隐藏时列归零，显示时恢复
+                    MainContentGrid.ColumnDefinitions[0].Width = collapsed
+                        ? new GridLength(0)
+                        : new GridLength(220);
+                    LeftSplitter.Visibility = collapsed
+                        ? Visibility.Collapsed
+                        : Visibility.Visible;
+                }
             }
         }
 
