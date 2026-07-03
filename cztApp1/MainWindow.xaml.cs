@@ -154,6 +154,73 @@ namespace cztApp1
                 border.Focus();
         }
 
+        private void ViewMenu_Click(object sender, RoutedEventArgs e)
+        {
+            var menu = new ContextMenu();
+            var miData = new MenuItem { Header = "✓ 数据面板", Tag = "Data" };
+            var miMap = new MenuItem { Header = "✓ 地图视图", Tag = "Map" };
+            var miLayer = new MenuItem { Header = "✓ 图层面板", Tag = "Layer" };
+            // 符号面板默认关闭，不带勾
+            var miSymbol = new MenuItem { Header = "  符号系统", Tag = "Symbol" };
+            if (SymbolPanelHost.Visibility == Visibility.Visible)
+                miSymbol.Header = "✓ 符号系统";
+
+            foreach (var mi in new[] { miData, miMap, miLayer, miSymbol })
+            {
+                mi.Click += ViewMenuItem_Click;
+                menu.Items.Add(mi);
+            }
+            menu.PlacementTarget = ViewMenuBtn;
+            menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+            menu.IsOpen = true;
+        }
+
+        private void ViewMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not MenuItem mi || mi.Tag is not string tag) return;
+
+            switch (tag)
+            {
+                case "Data":
+                    TogglePanelColumn(0, "LeftSplitter", 220);
+                    break;
+                case "Map":
+                    MapViewControl.Visibility = MapViewControl.Visibility == Visibility.Visible
+                        ? Visibility.Collapsed : Visibility.Visible;
+                    break;
+                case "Layer":
+                    TogglePanelColumn(4, "RightOuterSplitter", 220);
+                    break;
+                case "Symbol":
+                    if (SymbolPanelHost.Visibility == Visibility.Visible)
+                    {
+                        SymbolPanelHost.Visibility = Visibility.Collapsed;
+                        RightSplitter.Visibility = Visibility.Collapsed;
+                        RightPanelGrid.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
+                        RightPanelGrid.RowDefinitions[2].Height = GridLength.Auto;
+                    }
+                    else
+                    {
+                        SymbolPanelHost.Visibility = Visibility.Visible;
+                        RightSplitter.Visibility = Visibility.Visible;
+                        RightPanelGrid.RowDefinitions[0].Height = new GridLength(3, GridUnitType.Star);
+                        RightPanelGrid.RowDefinitions[2].Height = new GridLength(1, GridUnitType.Star);
+                        if (MainContentGrid.ColumnDefinitions[4].Width.Value < 1)
+                            MainContentGrid.ColumnDefinitions[4].Width = new GridLength(220);
+                    }
+                    break;
+            }
+        }
+
+        private void TogglePanelColumn(int col, string splitterName, double width)
+        {
+            var colDef = MainContentGrid.ColumnDefinitions[col];
+            bool wasOpen = colDef.Width.Value > 0;
+            colDef.Width = wasOpen ? new GridLength(0) : new GridLength(width);
+            if (FindName(splitterName) is GridSplitter gs)
+                gs.Visibility = wasOpen ? Visibility.Collapsed : Visibility.Visible;
+        }
+
         private void SymbolOptions_Click(object sender, RoutedEventArgs e)
         {
             var menu = new ContextMenu();

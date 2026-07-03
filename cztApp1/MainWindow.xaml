@@ -181,6 +181,13 @@
                             <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets" FontSize="5" Foreground="#1A1A1A"/>
                         </Button>
                     </Grid>
+
+                    <Border Width="1" Height="14" Background="#D0D0D0" VerticalAlignment="Center" Margin="4,0"/>
+
+                    <!-- 视图下拉按钮 -->
+                    <Button x:Name="ViewMenuBtn" Content="视图 ▼" FontSize="11"
+                            Foreground="#1A1A1A" Background="Transparent" BorderThickness="0"
+                            Cursor="Hand" Padding="6,2" Click="ViewMenu_Click"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal"
