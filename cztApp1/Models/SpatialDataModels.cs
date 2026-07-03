@@ -69,10 +69,15 @@ public static class SpatialDataHelper
     /// </summary>
     public static bool IsCompanionFile(string filePath)
     {
-        var ext = Path.GetExtension(filePath);
-        if (ShapefileCompanions.Contains(ext)) return true;
-
         var name = Path.GetFileName(filePath);
+
+        // 统一用 EndsWith 匹配，因为 .shp.xml / .tif.aux.xml 等双后缀
+        // Path.GetExtension 只能取最后一个 (.xml)，会漏掉
+        foreach (var companion in ShapefileCompanions)
+        {
+            if (name.EndsWith(companion, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
         foreach (var companion in RasterCompanions)
         {
             if (name.EndsWith(companion, StringComparison.OrdinalIgnoreCase))
