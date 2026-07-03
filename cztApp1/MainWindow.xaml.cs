@@ -170,16 +170,21 @@ namespace cztApp1
 
         private void ViewMenu_Click(object sender, RoutedEventArgs e)
         {
-            var menu = new ContextMenu();
-            var miData = new MenuItem { Header = "✓ 数据面板", Tag = "Data" };
-            var miMap = new MenuItem { Header = "✓ 地图视图", Tag = "Map" };
-            var miLayer = new MenuItem { Header = "✓ 图层面板", Tag = "Layer" };
-            // 符号面板默认关闭，不带勾
-            var miSymbol = new MenuItem { Header = "  符号系统", Tag = "Symbol" };
-            if (SymbolPanelHost.Visibility == Visibility.Visible)
-                miSymbol.Header = "✓ 符号系统";
+            // 动态检测各面板当前可见状态，更新勾选标记
+            bool dataVisible = MainContentGrid.ColumnDefinitions[0].Width.Value > 0;
+            bool mapVisible = MapViewControl.Visibility == Visibility.Visible;
+            bool layerVisible = MainContentGrid.ColumnDefinitions[4].Width.Value > 0;
+            bool symbolVisible = SymbolPanelHost.Visibility == Visibility.Visible;
 
-            foreach (var mi in new[] { miData, miMap, miLayer, miSymbol })
+            string Chk(bool v) => v ? "✓ " : "   ";
+
+            var menu = new ContextMenu();
+            var miData = new MenuItem { Header = $"{Chk(dataVisible)}数据面板", Tag = "Data" };
+            var miMap  = new MenuItem { Header = $"{Chk(mapVisible)}地图视图", Tag = "Map" };
+            var miLayer= new MenuItem { Header = $"{Chk(layerVisible)}图层面板", Tag = "Layer" };
+            var miSym  = new MenuItem { Header = $"{Chk(symbolVisible)}符号系统", Tag = "Symbol" };
+
+            foreach (var mi in new[] { miData, miMap, miLayer, miSym })
             {
                 mi.Click += ViewMenuItem_Click;
                 menu.Items.Add(mi);
