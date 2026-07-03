@@ -35,6 +35,17 @@ namespace cztApp1
             // Initialize map layer service
             _mapLayerService = new MapLayerService(MapViewControl);
             _mapLayerService.LayersChanged += OnLayersChanged;
+
+            // 默认底图（OSM 在线瓦片，用户可手动关闭或移除）
+            var basemap = new MapLayer
+            {
+                LayerId = "basemap",
+                Name = "底图 (OSM)",
+                Type = SpatialDataType.Other,
+                IsVisible = true
+            };
+            _mapLayerService.Layers.Add(basemap);
+
             LayerTreeView.ItemsSource = _mapLayerService.Layers;
             SetupLayerTreeViewEvents();
 

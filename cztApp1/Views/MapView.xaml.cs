@@ -322,10 +322,14 @@ var map = L.map('map', {
   attributionControl: false
 });
 
-// 纯白背景，数据直接渲染（跟 ArcGIS Pro 一样）
+// 默认底图（OSM 在线瓦片，有网时显示世界地图）
+var basemap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19, opacity: 0.5, attribution: '© OSM'
+}).addTo(map);
 
-// Layer registry
+// Layer registry（basemap 作为特殊图层可以 toggle）
 var layers = {};
+layers['basemap'] = { name: '底图', leafletLayer: basemap, type: 'basemap' };
 
 function addVectorLayer(id, name, geojsonStr) {
   // Remove existing layer with same ID
