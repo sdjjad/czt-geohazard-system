@@ -225,9 +225,10 @@ namespace cztApp1
                 }
             };
 
-            // 拖拽排序
+            // 拖拽排序（排除 CheckBox 点击）
             LayerTreeView.PreviewMouseLeftButtonDown += (_, e) =>
             {
+                if (IsClickOn<CheckBox>(e.OriginalSource)) return;
                 _dragItem = FindParent<TreeViewItem>((DependencyObject)e.OriginalSource);
                 _dragLayer = _dragItem?.DataContext as MapLayer;
             };
@@ -304,6 +305,14 @@ namespace cztApp1
         {
             while (d != null) { if (d is T t) return t; d = VisualTreeHelper.GetParent(d); }
             return null;
+        }
+
+        private static bool IsClickOn<T>(object source) where T : DependencyObject
+        {
+            if (source is T) return true;
+            if (source is DependencyObject d)
+                return FindParent<T>(d) != null;
+            return false;
         }
 
         #region 符号系统面板
