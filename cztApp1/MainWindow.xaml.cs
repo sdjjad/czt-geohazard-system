@@ -34,7 +34,13 @@ namespace cztApp1
             _mapLayerService = new MapLayerService(MapViewControl);
             _mapLayerService.LayersChanged += OnLayersChanged;
             LayerListBox.ItemsSource = _mapLayerService.Layers;
-            ClearAllLayersBtn.Click += ClearAllLayers_Click;
+
+            // 地图工具条坐标更新 → 状态栏
+            MapViewControl.CoordChanged += (coord, scale) =>
+            {
+                StatusCoord.Text = coord;
+                StatusScale.Text = scale;
+            };
 
             // Hook up tree double-click
             DataTree.MouseDoubleClick += DataTree_MouseDoubleClick;
@@ -62,6 +68,60 @@ namespace cztApp1
             await _mapLayerService.ClearAllAsync();
             RecordOperation("清空所有图层");
         }
+
+        #region 面板事件
+
+        private void DataPanel_GotFocus(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is Border border)
+                border.Focus();
+        }
+
+        private void LayerPanel_GotFocus(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is Border border)
+                border.Focus();
+        }
+
+        private void LayerOptions_Click(object sender, RoutedEventArgs e)
+        {
+            var menu = new ContextMenu();
+            var clear = new MenuItem { Header = "清空所有图层" };
+            clear.Click += async (_, _) => await _mapLayerService.ClearAllAsync();
+            menu.Items.Add(clear);
+            menu.IsOpen = true;
+        }
+
+        private void LayerAutoHide_Click(object sender, RoutedEventArgs e)
+        {
+            // 简单切换：折叠面板（实际可扩展为自动隐藏功能）
+        }
+
+        private void LayerPanelClose_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn)
+            {
+                var border = FindParent<Border>(btn);
+                if (border != null) border.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void RemoveLayerBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is MapLayer layer)
+            {
+                _ = _mapLayerService.RemoveLayerAsync(layer);
+                RecordOperation($"移除图层: {layer.Name}");
+            }
+        }
+
+        private static T? FindParent<T>(DependencyObject d) where T : DependencyObject
+        {
+            while (d != null) { if (d is T t) return t; d = VisualTreeHelper.GetParent(d); }
+            return null;
+        }
+
+        #endregion
 
         private void UpdateUndoRedoState()
         {
@@ -478,14 +538,6 @@ namespace cztApp1
 
         #endregion
 
-        private void DataPanel_GotFocus(object sender, MouseButtonEventArgs e)
-        {
-            if (sender is Border border)
-                border.Focus();
-        }
-
-        #endregion
-
         #region 分析面板
 
         private void ShowAnalysis(ModuleInfo module)
@@ -497,7 +549,6 @@ namespace cztApp1
                 {
                     AnalysisHost.Children.Clear();
                     MapViewControl.Visibility = Visibility.Visible;
-                    LayerListPanel.Visibility = Visibility.Visible;
                 };
                 AnalysisHost.Children.Add(panel);
             }
@@ -506,12 +557,13 @@ namespace cztApp1
                 existing.LoadModule(module);
             }
             MapViewControl.Visibility = Visibility.Collapsed;
-            LayerListPanel.Visibility = Visibility.Collapsed;
         }
 
         private void Geo_Btn_Click(object sender, RoutedEventArgs e) => ShowAnalysis(ModuleRegistry.Geology);
         private void Topo_Btn_Click(object sender, RoutedEventArgs e) => ShowAnalysis(ModuleRegistry.Topography);
         private void Veg_Btn_Click(object sender, RoutedEventArgs e) => ShowAnalysis(ModuleRegistry.Vegetation);
+
+        #endregion
 
         #endregion
     }

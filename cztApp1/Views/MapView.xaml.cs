@@ -18,6 +18,9 @@ public partial class MapView : UserControl
     private readonly Queue<string> _pendingScripts = new();
     private int _layerIdCounter;
 
+    /// <summary>鼠标移动时报告经纬度和比例尺</summary>
+    public event Action<string, string>? CoordChanged;
+
     public MapView()
     {
         InitializeComponent();
@@ -57,6 +60,20 @@ public partial class MapView : UserControl
                     WebMap.CoreWebView2.ExecuteScriptAsync(script);
                 }
             });
+        }
+        else if (msg != null && msg.StartsWith("\"coord:"))
+        {
+            // Parse coord message: "coord:lng,lat,zoom,scale"
+            var parts = msg.Trim('"').Split(':')[1].Split(',');
+            if (parts.Length >= 4)
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    CoordText.Text = $"{parts[0]}° E  {parts[1]}° N";
+                    ScaleText.Text = $"比例 1:{parts[3]}";
+                    CoordChanged?.Invoke(CoordText.Text, ScaleText.Text);
+                });
+            }
         }
     }
 
@@ -419,6 +436,37 @@ function clearAllLayers() {
   layers = {};
   updateLayerControl();
 }
+
+// 坐标显示和比例尺 → C#
+var coordThrottle = 0;
+function sendCoord(lng, lat, zoom, scale) {
+  var now = Date.now();
+  if (now - coordThrottle < 120) return;
+  coordThrottle = now;
+  try {
+    window.chrome.webview.postMessage(JSON.stringify('coord:' + lng + ',' + lat + ',' + zoom + ',' + scale));
+  } catch(e) {}
+}
+function calcScale(lat, zoom) {
+  return Math.round(156543.03392 * Math.cos(lat * Math.PI/180) / Math.pow(2, zoom));
+}
+map.on('mousemove', function(e) {
+  var lat = e.latlng.lat.toFixed(6);
+  var lng = e.latlng.lng.toFixed(6);
+  var scale = calcScale(e.latlng.lat, map.getZoom());
+  sendCoord(lng, lat, map.getZoom(), scale);
+});
+map.on('zoomend', function() {
+  var c = map.getCenter();
+  var scale = calcScale(c.lat, map.getZoom());
+  sendCoord(c.lng.toFixed(6), c.lat.toFixed(6), map.getZoom(), scale);
+});
+// 初始发送一次
+(function() {
+  var c = map.getCenter();
+  var scale = calcScale(c.lat, map.getZoom());
+  sendCoord(c.lng.toFixed(6), c.lat.toFixed(6), map.getZoom(), scale);
+})();
 
 // Notify C# that the map is ready
 try { window.chrome.webview.postMessage('""map-ready""'); } catch(e) {}
