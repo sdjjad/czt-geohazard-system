@@ -3,25 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf">
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-        <wv2:WebView2 x:Name="WebMap" Grid.Row="0" />
-        <!-- 地图工具条：比例尺 + 坐标 -->
-        <Border Grid.Row="1" Background="#FAFAFA" BorderBrush="#D0D0D0"
-                BorderThickness="0,1,0,0" Padding="8,3">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" x:Name="ScaleText" Text="比例 1:50000"
-                           FontSize="10" Foreground="#666"/>
-                <TextBlock Grid.Column="2" x:Name="CoordText" Text="113.00° E  27.90° N"
-                           FontSize="10" Foreground="#666"/>
-            </Grid>
-        </Border>
+        <wv2:WebView2 x:Name="WebMap" />
     </Grid>
 </UserControl>

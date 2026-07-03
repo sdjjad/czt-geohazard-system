@@ -61,7 +61,7 @@ public static class SpatialDataHelper
     {
         ".tfw", ".tif.aux.xml", ".tif.xml", ".tif.ovr",
         ".tif.vat.cpg", ".tif.vat.dbf", ".aux.xml", ".ovr",
-        ".jpg.aux.xml", ".png.aux.xml"
+        ".jpg.aux.xml", ".png.aux.xml", ".sdw"
     };
 
     /// <summary>
@@ -95,7 +95,7 @@ public static class SpatialDataHelper
         return ext switch
         {
             ".shp" => SpatialDataType.Vector,
-            ".tif" or ".tiff" or ".img" => SpatialDataType.Raster,
+            ".tif" or ".tiff" or ".img" or ".sid" => SpatialDataType.Raster,
             _ => SpatialDataType.Other
         };
     }
@@ -106,7 +106,7 @@ public static class SpatialDataHelper
     public static bool IsSpatialDataFile(string filePath)
     {
         var ext = Path.GetExtension(filePath).ToLowerInvariant();
-        return ext is ".shp" or ".tif" or ".tiff" or ".img";
+        return ext is ".shp" or ".tif" or ".tiff" or ".img" or ".sid";
     }
 
     /// <summary>

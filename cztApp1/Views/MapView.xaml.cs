@@ -69,9 +69,9 @@ public partial class MapView : UserControl
             {
                 Dispatcher.Invoke(() =>
                 {
-                    CoordText.Text = $"{parts[0]}° E  {parts[1]}° N";
-                    ScaleText.Text = $"比例 1:{parts[3]}";
-                    CoordChanged?.Invoke(CoordText.Text, ScaleText.Text);
+                    var coord = $"{parts[0]}° E  {parts[1]}° N";
+                    var scale = $"比例 1:{parts[3]}";
+                    CoordChanged?.Invoke(coord, scale);
                 });
             }
         }
@@ -437,6 +437,9 @@ function clearAllLayers() {
   updateLayerControl();
 }
 
+// Notify C# that the map is ready
+try { window.chrome.webview.postMessage('""map-ready""'); } catch(e) {}
+
 // 坐标显示和比例尺 → C#
 var coordThrottle = 0;
 function sendCoord(lng, lat, zoom, scale) {
@@ -462,14 +465,13 @@ map.on('zoomend', function() {
   sendCoord(c.lng.toFixed(6), c.lat.toFixed(6), map.getZoom(), scale);
 });
 // 初始发送一次
-(function() {
-  var c = map.getCenter();
-  var scale = calcScale(c.lat, map.getZoom());
-  sendCoord(c.lng.toFixed(6), c.lat.toFixed(6), map.getZoom(), scale);
-})();
-
-// Notify C# that the map is ready
-try { window.chrome.webview.postMessage('""map-ready""'); } catch(e) {}
+setTimeout(function() {
+  try {
+    var c = map.getCenter();
+    var scale = calcScale(c.lat, map.getZoom());
+    sendCoord(c.lng.toFixed(6), c.lat.toFixed(6), map.getZoom(), scale);
+  } catch(e) {}
+}, 500);
 </script>
 </body>
 </html>");
