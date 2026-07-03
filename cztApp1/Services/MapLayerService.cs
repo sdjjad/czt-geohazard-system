@@ -106,24 +106,24 @@ public class MapLayerService
                     vs.PointSize = 8;
                     break;
             }
-            layer.Symbols.Add(new SymbolItem
-            {
-                Geometry = geom,
-                Layer = layer
-            });
+            var sym = new SymbolItem { Geometry = geom, Layer = layer };
+            layer.Symbols.Add(sym);
+            // 订阅符号变更，自动刷新 TreeView 预览
+            vs.PropertyChanged += (_, _) => sym.NotifyRefresh();
         }
         else if (layer.RasterSymbol != null)
         {
-            layer.Symbols.Add(new SymbolItem
-            {
-                Geometry = SymbolGeometry.Raster,
-                Layer = layer
-            });
+            var sym = new SymbolItem { Geometry = SymbolGeometry.Raster, Layer = layer };
+            layer.Symbols.Add(sym);
+            layer.RasterSymbol.PropertyChanged += (_, _) => sym.NotifyRefresh();
         }
 
         _layerLookup[layerId] = layer;
         Layers.Add(layer);
         LayersChanged?.Invoke();
+
+        // 推送初始符号样式到 JS 地图
+        _ = _mapView.UpdateLayerStyleAsync(layer);
 
         return layer;
     }

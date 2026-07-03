@@ -624,7 +624,8 @@
                 </Border>
 
                 <GridSplitter Grid.Column="1" Width="4" Background="Transparent"
-                              HorizontalAlignment="Center" VerticalAlignment="Stretch"/>
+                              HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                              ResizeBehavior="PreviousAndNext"/>
 
                 <!-- 地图视图 / 分析面板 -->
                 <Border Grid.Column="2" Background="White">
@@ -646,12 +647,14 @@
                 </Border>
 
                 <GridSplitter Grid.Column="3" Width="4" Background="Transparent"
-                              HorizontalAlignment="Center" VerticalAlignment="Stretch"/>
+                              HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                              ResizeBehavior="PreviousAndNext"/>
 
-                <!-- 右侧面板区：图层面板 + 符号系统面板 -->
-                <Grid Grid.Column="4" Margin="0,2,6,4">
+                <!-- 右侧面板区：图层面板 + 分隔条 + 符号系统面板 -->
+                <Grid Grid.Column="4" Margin="0,2,6,4" x:Name="RightPanelGrid">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*" MinHeight="100"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
@@ -807,8 +810,14 @@
                     </Grid>
                 </Border>
 
+                <!-- 图层面板与符号面板之间的分隔条 -->
+                <GridSplitter Grid.Row="1" x:Name="RightSplitter" Height="4"
+                              HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                              Background="Transparent" ResizeBehavior="PreviousAndNext"
+                              Visibility="Collapsed"/>
+
                 <!-- 符号系统面板（独立面板，默认隐藏） -->
-                <Border Grid.Row="1" x:Name="SymbolPanelHost" Visibility="Collapsed"
+                <Border Grid.Row="2" x:Name="SymbolPanelHost" Visibility="Collapsed"
                         Style="{StaticResource PanelBorderStyle}" Margin="0,4,0,0"
                         MouseDown="SymbolPanel_GotFocus">
                     <Grid>

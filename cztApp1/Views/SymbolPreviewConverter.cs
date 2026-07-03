@@ -64,9 +64,10 @@ public class SymbolPreviewConverter : IValueConverter
     private static FrameworkElement BuildPoint(VectorSymbol? vs)
     {
         var color = ParseColor(vs?.PointColor ?? "#E81123");
+        double size = Math.Max(4, Math.Min(32, (vs?.PointSize ?? 8)));
         return new Ellipse
         {
-            Width = 14, Height = 14,
+            Width = size, Height = size,
             Fill = new SolidColorBrush(color),
             Stroke = new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99)),
             StrokeThickness = 1

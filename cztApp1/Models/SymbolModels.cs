@@ -65,12 +65,19 @@ public class RasterSymbol : INotifyPropertyChanged
 }
 
 /// <summary>
-/// 图层面板中显示的子项（符号条目），引用父图层以获取真实符号
+/// 图层面板中显示的子项（符号条目），引用父图层以获取真实符号。
+/// 实现 INotifyPropertyChanged，当底层 VectorSymbol/RasterSymbol 变化时自动刷新 TreeView 预览。
 /// </summary>
-public class SymbolItem
+public class SymbolItem : INotifyPropertyChanged
 {
     public string Label { get; set; } = "";
     public SymbolGeometry Geometry { get; set; } = SymbolGeometry.Polygon;
     /// <summary>所属图层引用，读取真实 VectorSymbol / RasterSymbol</summary>
     public object? Layer { get; set; }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    /// <summary>当底层 VectorSymbol/RasterSymbol 属性变化时调用，触发 WPF 重新绑定预览</summary>
+    public void NotifyRefresh()
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
 }

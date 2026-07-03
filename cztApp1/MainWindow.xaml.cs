@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -175,6 +176,9 @@ namespace cztApp1
         private void SymbolPanelClose_Click(object sender, RoutedEventArgs e)
         {
             SymbolPanelHost.Visibility = Visibility.Collapsed;
+            RightSplitter.Visibility = Visibility.Collapsed;
+            RightPanelGrid.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
+            RightPanelGrid.RowDefinitions[2].Height = GridLength.Auto;
         }
 
         private void LayerOptions_Click(object sender, RoutedEventArgs e)
@@ -328,11 +332,16 @@ namespace cztApp1
         };
 
         private MapLayer? _currentSymbolLayer;
+        private PropertyChangedEventHandler? _symbolPreviewHandler;
 
         private void ShowSymbolEditor(MapLayer layer)
         {
             _currentSymbolLayer = layer;
             SymbolPanelHost.Visibility = Visibility.Visible;
+            RightSplitter.Visibility = Visibility.Visible;
+            // 切换行高：图层面板 3 份，符号面板 1 份，分隔条自适应
+            RightPanelGrid.RowDefinitions[0].Height = new GridLength(3, GridUnitType.Star);
+            RightPanelGrid.RowDefinitions[2].Height = new GridLength(1, GridUnitType.Star);
             SymbolEditorHost.Children.Clear();
 
             var isVector = layer.Type == SpatialDataType.Vector;
@@ -345,39 +354,15 @@ namespace cztApp1
             }
             else if (!isVector && layer.RasterSymbol != null)
             {
-                BuildRasterSymbolEditor(layer.RasterSymbol);
+                BuildRasterSymbolEditor(layer, layer.RasterSymbol);
             }
         }
 
         private void OnSymbolEdited(MapLayer layer)
         {
-            // 刷新树中的符号预览
-            if (layer.Symbols.Count > 0)
-            {
-                var sym = layer.Symbols[0];
-                layer.Symbols.RemoveAt(0);
-                layer.Symbols.Insert(0, sym);
-            }
-            // 同步到地图
-            _ = UpdateMapStyle(layer);
-        }
-
-        private async Task UpdateMapStyle(MapLayer layer)
-        {
-            if (layer.VectorSymbol == null) return;
-            var vs = layer.VectorSymbol;
-            // 直接用 JS 修改 Leaflet 图层样式
-            var script = $@"
-var l = layers['{layer.LayerId}'];
-if (l && l.leafletLayer) {{
-  l.leafletLayer.eachLayer(function(lyr) {{
-    if (lyr.setStyle) {{
-      lyr.setStyle({{ color: '{vs.StrokeColor}', weight: {vs.StrokeWidth}, fillColor: '{vs.FillColor}', fillOpacity: {vs.FillOpacity} }});
-    }}
-    if (lyr.setRadius) lyr.setRadius({vs.PointSize});
-  }});
-}}";
-            await MapViewControl.RunScriptAsync(script);
+            // SymbolItem 已订阅 VectorSymbol.PropertyChanged，自动通知 WPF 刷新树预览
+            // 只需同步样式到 JS 地图
+            _ = MapViewControl.UpdateLayerStyleAsync(layer);
         }
 
         // ========== 矢量符号编辑器 ==========
@@ -412,9 +397,12 @@ if (l && l.leafletLayer) {{
             }
 
             sp.Children.Add(grid);
-            // 实时预览
+            // 实时预览（取消旧订阅，防止内存泄漏）
+            if (_symbolPreviewHandler != null)
+                vs.PropertyChanged -= _symbolPreviewHandler;
             var preview = BuildSymbolPreview(vs, geom);
-            vs.PropertyChanged += (_, _) => UpdatePreview(sp, preview, vs, geom);
+            _symbolPreviewHandler = (_, _) => UpdatePreview(sp, preview, vs, geom);
+            vs.PropertyChanged += _symbolPreviewHandler;
             sp.Children.Add(preview);
             SymbolEditorHost.Children.Add(sp);
         }
@@ -472,8 +460,9 @@ if (l && l.leafletLayer) {{
 
         // ========== 栅格符号编辑器 ==========
 
-        private void BuildRasterSymbolEditor(RasterSymbol rs)
+        private void BuildRasterSymbolEditor(MapLayer layer, RasterSymbol rs)
         {
+            Action onChanged = () => OnSymbolEdited(layer);
             var sp = new StackPanel();
             sp.Children.Add(new TextBlock
             {
@@ -502,11 +491,13 @@ if (l && l.leafletLayer) {{
 
                 // 色块按钮
                 var sw = new Button { Width = 22, Height = 16, Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(stop.Color)!), BorderBrush = Brushes.Gray, BorderThickness = new Thickness(1), Cursor = Cursors.Hand };
-                sw.Click += (_, _) => ShowColorPopup(sw, stop.Color, c => { stop.Color = c; sw.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(c)!); rs.NotifyChanged(); });
+                sw.Click += (_, _) => ShowColorPopup(sw, stop.Color, c => { stop.Color = c; sw.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(c)!); rs.NotifyChanged(); onChanged(); });
                 Grid.SetColumn(sw, 1); r.Children.Add(sw);
 
                 var vb = new TextBox { Text = stop.Value.ToString("F0"), FontSize = 10, Width = 44, VerticalAlignment = VerticalAlignment.Center };
-                vb.LostFocus += (_, _) => { if (double.TryParse(vb.Text, out var v)) { stop.Value = v; rs.NotifyChanged(); } else vb.Text = stop.Value.ToString("F0"); };
+                Action commitStop = () => { if (double.TryParse(vb.Text, out var v)) { stop.Value = v; rs.NotifyChanged(); onChanged(); } else vb.Text = stop.Value.ToString("F0"); };
+                vb.LostFocus += (_, _) => commitStop();
+                vb.KeyDown += (_, e) => { if (e.Key == Key.Enter) { commitStop(); vb.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next)); } };
                 Grid.SetColumn(vb, 2); r.Children.Add(vb);
 
                 sp.Children.Add(r);
@@ -595,7 +586,9 @@ if (l && l.leafletLayer) {{
             Grid.SetRow(tb, row); Grid.SetColumn(tb, 0); grid.Children.Add(tb);
 
             var box = new TextBox { Text = init.ToString("F1"), FontSize = 10, Width = 48, VerticalAlignment = VerticalAlignment.Center };
-            box.LostFocus += (_, _) => { if (double.TryParse(box.Text, out var v)) setter(v); else box.Text = init.ToString("F1"); };
+            Action commit = () => { if (double.TryParse(box.Text, out var v)) setter(v); else box.Text = init.ToString("F1"); };
+            box.LostFocus += (_, _) => commit();
+            box.KeyDown += (_, e) => { if (e.Key == Key.Enter) { commit(); box.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next)); } };
             Grid.SetRow(box, row); Grid.SetColumn(box, 2); grid.Children.Add(box);
             row++;
         }

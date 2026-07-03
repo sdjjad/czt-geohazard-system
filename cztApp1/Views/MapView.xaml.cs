@@ -85,9 +85,9 @@ public partial class MapView : UserControl
     #region Public API
 
     /// <summary>
-    /// Add a vector layer from GeoJSON string.
+    /// Add a vector layer from GeoJSON string. Optionally pass initial style properties.
     /// </summary>
-    public async Task<string> AddVectorLayerAsync(string name, string geojson)
+    public async Task<string> AddVectorLayerAsync(string name, string geojson, Models.VectorSymbol? style = null)
     {
         var layerId = $"layer_{Interlocked.Increment(ref _layerIdCounter)}";
         // Escape backslashes and quotes for safe JS embedding
@@ -97,13 +97,58 @@ public partial class MapView : UserControl
             .Replace("\r", "")
             .Replace("\n", " ");
 
-        var script = $@"addVectorLayer('{layerId}', '{name}', '{escapedJson}');";
+        var styleJs = style != null ? BuildStyleJsObject(style) : "null";
+        var script = $@"addVectorLayer('{layerId}', '{name}', '{escapedJson}', {styleJs});";
         await RunScriptAsync(script);
 
         // Also zoom to the layer if it's the first one
         await RunScriptAsync($"zoomToLayer('{layerId}');");
 
         return layerId;
+    }
+
+    /// <summary>
+    /// Push a layer's current VectorSymbol/RasterSymbol style to the JS map.
+    /// </summary>
+    public async Task UpdateLayerStyleAsync(Services.MapLayer layer)
+    {
+        if (layer.VectorSymbol == null && layer.RasterSymbol == null) return;
+
+        var ci = System.Globalization.CultureInfo.InvariantCulture;
+        string styleObj;
+
+        if (layer.VectorSymbol != null)
+        {
+            var vs = layer.VectorSymbol;
+            var geom = layer.Symbols.Count > 0 ? layer.Symbols[0].Geometry : Models.SymbolGeometry.Polygon;
+            styleObj = geom switch
+            {
+                Models.SymbolGeometry.Polygon => string.Format(ci,
+                    "{{ color: '{0}', weight: {1:F1}, fillColor: '{2}', fillOpacity: {3:F2} }}",
+                    vs.StrokeColor, vs.StrokeWidth, vs.FillColor, vs.FillOpacity),
+                Models.SymbolGeometry.Line => string.Format(ci,
+                    "{{ color: '{0}', weight: {1:F1} }}",
+                    vs.StrokeColor, vs.StrokeWidth),
+                Models.SymbolGeometry.Point => string.Format(ci,
+                    "{{ color: '{0}', fillColor: '{0}', fillOpacity: 0.7, weight: 2, radius: {1:F1} }}",
+                    vs.PointColor, vs.PointSize),
+                _ => "{}"
+            };
+        }
+        else
+        {
+            styleObj = "{ opacity: 0.8 }";
+        }
+
+        await RunScriptAsync($"updateLayerStyle('{layer.LayerId}', {styleObj});");
+    }
+
+    private static string BuildStyleJsObject(Models.VectorSymbol vs)
+    {
+        var ci = System.Globalization.CultureInfo.InvariantCulture;
+        return string.Format(ci,
+            "{{ strokeColor: '{0}', strokeWidth: {1:F1}, fillColor: '{2}', fillOpacity: {3:F2}, pointColor: '{4}', pointSize: {5:F1} }}",
+            vs.StrokeColor, vs.StrokeWidth, vs.FillColor, vs.FillOpacity, vs.PointColor, vs.PointSize);
     }
 
     /// <summary>
@@ -331,22 +376,34 @@ var basemap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', 
 var layers = {};
 layers['basemap'] = { name: '底图', leafletLayer: basemap, type: 'basemap' };
 
-function addVectorLayer(id, name, geojsonStr) {
+function addVectorLayer(id, name, geojsonStr, styleProps) {
   // Remove existing layer with same ID
   if (layers[id]) { map.removeLayer(layers[id].leafletLayer); }
 
   var geojson = JSON.parse(geojsonStr);
+  var props = styleProps || {};
   var lyr = L.geoJSON(geojson, {
     style: function(feature) {
-      return { color: '#1565C0', weight: 2, fillColor: '#64B5F6', fillOpacity: 0.3 };
+      return {
+        color: props.strokeColor || '#1565C0',
+        weight: props.strokeWidth || 2,
+        fillColor: props.fillColor || '#64B5F6',
+        fillOpacity: props.fillOpacity || 0.3
+      };
     },
     pointToLayer: function(feature, latlng) {
-      return L.circleMarker(latlng, { radius: 6, color: '#E81123', fillColor: '#E81123', fillOpacity: 0.7, weight: 2 });
+      return L.circleMarker(latlng, {
+        radius: props.pointSize || 6,
+        color: props.pointColor || '#E81123',
+        fillColor: props.pointColor || '#E81123',
+        fillOpacity: 0.7,
+        weight: 2
+      });
     }
   }).addTo(map);
 
   layers[id] = { name: name, leafletLayer: lyr, type: 'vector' };
-  
+
 }
 
 function addRasterLayer(id, name, base64data, south, west, north, east) {
@@ -358,6 +415,30 @@ function addRasterLayer(id, name, base64data, south, west, north, east) {
 
   layers[id] = { name: name, leafletLayer: lyr, type: 'raster' };
   
+}
+
+function updateLayerStyle(id, style) {
+  var l = layers[id];
+  if (!l || !l.leafletLayer) return;
+
+  if (l.type === 'vector') {
+    l.leafletLayer.eachLayer(function(lyr) {
+      // 点图层：更新半径
+      if (typeof lyr.setRadius === 'function' && style.radius !== undefined)
+        lyr.setRadius(style.radius);
+      // 所有矢量图层：更新颜色/线宽/填充
+      if (typeof lyr.setStyle === 'function') {
+        var s = {};
+        if (style.color !== undefined) s.color = style.color;
+        if (style.weight !== undefined) s.weight = style.weight;
+        if (style.fillColor !== undefined) s.fillColor = style.fillColor;
+        if (style.fillOpacity !== undefined) s.fillOpacity = style.fillOpacity;
+        lyr.setStyle(s);
+      }
+    });
+  } else if (l.type === 'raster' && style.opacity !== undefined) {
+    l.leafletLayer.setOpacity(style.opacity);
+  }
 }
 
 function removeLayer(id) {
