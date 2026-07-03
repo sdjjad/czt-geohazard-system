@@ -20,9 +20,23 @@ namespace cztApp1
         private readonly ObservableCollection<string> _redoStack = new();
         private const int MaxHistory = 20;
 
-        private const string SpatialDataPath = @"D:\geomatics_task\地理信息工程及应用\2322050202于景赫-12组-长株潭地质灾害（土壤植被）\数据\空间数据";
-        private const string AttributeDataPath = @"D:\geomatics_task\地理信息工程及应用\2322050202于景赫-12组-长株潭地质灾害（土壤植被）\数据\属性数据";
+        // 数据目录：从 exe 向上找到解决方案根目录下的 Data 文件夹
+        private static readonly string SpatialDataPath = FindDataPath("空间数据");
+        private static readonly string AttributeDataPath = FindDataPath("属性数据");
         private string _currentRootPath = SpatialDataPath;
+
+        private static string FindDataPath(string subFolder)
+        {
+            // 从 exe 目录向上查找 Data/{subFolder}，适配不同开发/部署环境
+            var exeDir = AppContext.BaseDirectory;
+            for (var dir = exeDir; dir != null; dir = Path.GetDirectoryName(dir))
+            {
+                var candidate = Path.Combine(dir, "Data", subFolder);
+                if (Directory.Exists(candidate)) return candidate;
+            }
+            // 回退到旧路径（兼容）
+            return $@"D:\geomatics_task\地理信息工程及应用\2322050202于景赫-12组-长株潭地质灾害（土壤植被）\数据\{subFolder}";
+        }
 
         private MapLayerService _mapLayerService = null!;
 
