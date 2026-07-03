@@ -167,6 +167,7 @@ public class MapLayerService
         {
             var geojson = await Task.Run(() => ShapefileToGeoJson(filePath));
             if (string.IsNullOrEmpty(geojson)) return "";
+            System.Diagnostics.Debug.WriteLine($"[SHP] {name}: GeoJSON {geojson.Length} chars, geom={DetectGeometryType(filePath)}");
 
             var layerId = await _mapView.AddVectorLayerAsync(name, geojson);
             return layerId;
