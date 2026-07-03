@@ -851,6 +851,11 @@
                                                FontSize="8" Foreground="#444444"/>
                                 </Button>
                                 <Button Style="{StaticResource PanelIconBtnStyle}"
+                                        Click="SymbolAutoHide_Click" ToolTip="自动隐藏">
+                                    <TextBlock Text="&#xE77A;" FontFamily="Segoe MDL2 Assets"
+                                               FontSize="10" Foreground="#444444"/>
+                                </Button>
+                                <Button Style="{StaticResource PanelIconBtnStyle}"
                                         Click="SymbolPanelClose_Click" ToolTip="关闭面板">
                                     <TextBlock Text="&#xE8BB;" FontFamily="Segoe MDL2 Assets"
                                                FontSize="10" Foreground="#444444"/>

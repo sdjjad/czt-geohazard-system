@@ -235,6 +235,11 @@ namespace cztApp1
                 gs.Visibility = wasOpen ? Visibility.Collapsed : Visibility.Visible;
         }
 
+        private void SymbolAutoHide_Click(object sender, RoutedEventArgs e)
+        {
+            // 预留：符号面板自动隐藏
+        }
+
         private void SymbolOptions_Click(object sender, RoutedEventArgs e)
         {
             var menu = new ContextMenu();

@@ -181,7 +181,9 @@ public class MapLayerService
     {
         try
         {
+            System.Diagnostics.Debug.WriteLine($"[Raster] Loading: {filePath}");
             var layerId = await _mapView.AddRasterLayerAsync(name, filePath);
+            System.Diagnostics.Debug.WriteLine($"[Raster] LayerId: {layerId}");
             return layerId;
         }
         catch (Exception ex)

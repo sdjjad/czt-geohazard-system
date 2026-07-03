@@ -53,12 +53,14 @@ public partial class MapView : UserControl
         try
         {
             var raster = new Esri.ArcGISRuntime.Rasters.Raster(filePath);
+            await raster.LoadAsync();
             var layer = new RasterLayer(raster) { Name = name };
 
             _map.OperationalLayers.Add(layer);
             _layerLookup[layerId] = layer;
 
-            await EsriMapView.SetViewpointGeometryAsync(layer.FullExtent);
+            if (layer.FullExtent != null)
+                await EsriMapView.SetViewpointGeometryAsync(layer.FullExtent);
         }
         catch (Exception ex)
         {
