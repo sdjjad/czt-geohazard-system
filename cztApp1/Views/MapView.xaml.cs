@@ -39,6 +39,13 @@ public partial class MapView : UserControl
 
         WebMap.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
 
+        // 用虚拟主机映射 Resources 目录，本地加载 Leaflet（完全离线）
+        var resPath = FindResourcesPath();
+        if (!string.IsNullOrEmpty(resPath))
+            WebMap.CoreWebView2.SetVirtualHostNameToFolderMapping(
+                "leaflet.local", resPath,
+                CoreWebView2HostResourceAccessKind.Allow);
+
         var html = BuildLeafletHtml();
         WebMap.NavigateToString(html);
     }
@@ -289,10 +296,7 @@ public partial class MapView : UserControl
     /// </summary>
     private string BuildLeafletHtml()
     {
-        // 加载本地 Leaflet 文件（无需网络）
-        var leafletCss = ReadResource("leaflet.css");
-        var leafletJs = ReadResource("leaflet.js");
-
+        // 用虚拟主机 URL 加载本地 Leaflet（https://leaflet.local/xxx）
         var sb = new StringBuilder();
         sb.Append(@"<!DOCTYPE html>
 <html lang=""zh-CN"">
@@ -300,9 +304,7 @@ public partial class MapView : UserControl
 <meta charset=""UTF-8"">
 <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
 <title>Map</title>
-<style>");
-        sb.Append(leafletCss);
-        sb.Append(@"</style>
+<link rel=""stylesheet"" href=""https://leaflet.local/leaflet.css"" />
 <style>
   html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; }
   #map { width:100%; height:100%; background:#FFFFFF; }
@@ -311,9 +313,7 @@ public partial class MapView : UserControl
 <body>
 <div id=""map""></div>
 
-<script>");
-        sb.Append(leafletJs);
-        sb.Append(@"</script>
+<script src=""https://leaflet.local/leaflet.js""></script>
 <script>
 var map = L.map('map', {
   center: [27.9, 113.0],
@@ -322,7 +322,7 @@ var map = L.map('map', {
   attributionControl: false
 });
 
-// 无底图 — CZT 本地系统，纯白背景即可
+// 纯白背景，数据直接渲染（跟 ArcGIS Pro 一样）
 
 // Layer registry
 var layers = {};
@@ -397,28 +397,25 @@ try { window.chrome.webview.postMessage('""map-ready""'); } catch(e) {}
     }
 
     /// <summary>
-    /// 读取 Resources 目录中的文件内容（多层次查找）
+    /// 查找 Resources 文件夹路径（包含 leaflet.js/css）
     /// </summary>
-    private static string ReadResource(string filename)
+    private static string FindResourcesPath()
     {
-        // 1. 输出目录 (bin/Debug/net10.0-windows/Resources/)
-        var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-        var path = Path.Combine(baseDir, "Resources", filename);
-        if (File.Exists(path)) return File.ReadAllText(path);
-
-        // 2. 项目根目录 (开发时 dotnet run 的工作目录)
-        var cwd = Directory.GetCurrentDirectory();
-        path = Path.Combine(cwd, "Resources", filename);
-        if (File.Exists(path)) return File.ReadAllText(path);
-
-        // 3. 往上找两级 (bin → 项目根)
-        var parent = Directory.GetParent(baseDir)?.Parent?.FullName;
-        if (parent != null)
+        string[] candidates =
         {
-            path = Path.Combine(parent, "Resources", filename);
-            if (File.Exists(path)) return File.ReadAllText(path);
-        }
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources"),
+            Path.Combine(Directory.GetCurrentDirectory(), "Resources"),
+        };
+        // 往上找 (bin/Debug → 项目根)
+        var parent = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory)?.Parent?.FullName;
+        if (parent != null)
+            candidates = candidates.Append(Path.Combine(parent, "Resources")).ToArray();
 
+        foreach (var dir in candidates)
+        {
+            if (Directory.Exists(dir) && File.Exists(Path.Combine(dir, "leaflet.js")))
+                return dir;
+        }
         return "";
     }
 
