@@ -2,9 +2,6 @@ using System.Collections.ObjectModel;
 using System.IO;
 using cztApp1.Models;
 using cztApp1.Views;
-using NetTopologySuite.Features;
-using NetTopologySuite.Geometries;
-using NetTopologySuite.IO;
 
 namespace cztApp1.Services;
 
@@ -165,11 +162,7 @@ public class MapLayerService
     {
         try
         {
-            var geojson = await Task.Run(() => ShapefileToGeoJson(filePath));
-            if (string.IsNullOrEmpty(geojson)) return "";
-            System.Diagnostics.Debug.WriteLine($"[SHP] {name}: GeoJSON {geojson.Length} chars, geom={DetectGeometryType(filePath)}");
-
-            var layerId = await _mapView.AddVectorLayerAsync(name, geojson);
+            var layerId = await _mapView.AddVectorLayerAsync(name, filePath);
             return layerId;
         }
         catch (Exception ex)
@@ -197,63 +190,11 @@ public class MapLayerService
     }
 
     /// <summary>
-    /// Convert a shapefile to a GeoJSON string using NetTopologySuite.
-    /// </summary>
-    public static string? ShapefileToGeoJson(string shpPath)
-    {
-        if (!File.Exists(shpPath)) return null;
-
-        try
-        {
-            var factory = new GeometryFactory(new PrecisionModel(), 4326);
-            var features = new List<IFeature>();
-
-            using var shpReader = new ShapefileDataReader(shpPath, factory);
-            var dbfHeaders = shpReader.DbaseHeader;
-            var fieldNames = dbfHeaders.Fields.Select(f => f.Name).ToArray();
-
-            while (shpReader.Read())
-            {
-                var geom = shpReader.Geometry;
-                if (geom == null) continue;
-
-                var attributes = new AttributesTable();
-                for (int i = 0; i < fieldNames.Length; i++)
-                {
-                    var val = shpReader.GetValue(i);
-                    attributes.Add(fieldNames[i], val ?? DBNull.Value);
-                }
-
-                var feature = new NetTopologySuite.Features.Feature(geom, attributes);
-                features.Add(feature);
-            }
-
-            var collection = new FeatureCollection();
-            foreach (var f in features)
-                collection.Add(f);
-
-            var serializer = GeoJsonSerializer.Create();
-            using var sw = new StringWriter();
-            serializer.Serialize(sw, collection);
-            return sw.ToString();
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Shapefile read failed: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
     /// 切换图层可见性
     /// </summary>
-    public async void SetLayerVisibility(MapLayer layer, bool visible)
+    public void SetLayerVisibility(MapLayer layer, bool visible)
     {
         layer.IsVisible = visible;
-        if (visible)
-            await _mapView.RunScriptAsync($"toggleLayer('{layer.LayerId}', true);");
-        else
-            await _mapView.RunScriptAsync($"toggleLayer('{layer.LayerId}', false);");
     }
 
     /// <summary>

@@ -1,512 +1,161 @@
-using System.IO;
-using System.Text;
-using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using Microsoft.Web.WebView2.Core;
+using Esri.ArcGISRuntime.Data;
+using Esri.ArcGISRuntime.Geometry;
+using Esri.ArcGISRuntime.Mapping;
+using Esri.ArcGISRuntime.Symbology;
+using Esri.ArcGISRuntime.UI.Controls;
 
 namespace cztApp1.Views;
 
-/// <summary>
-/// Map view control wrapping WebView2 + Leaflet.js.
-/// Displays vector (GeoJSON) and raster (image overlay) layers.
-/// </summary>
 public partial class MapView : UserControl
 {
-    private bool _mapReady;
-    private readonly Queue<string> _pendingScripts = new();
-    private int _layerIdCounter;
+    private readonly Esri.ArcGISRuntime.Mapping.Map _map;
+    private readonly Dictionary<string, Layer> _layerLookup = new();
 
-        public MapView()
+    public MapView()
     {
         InitializeComponent();
-        WebMap.CoreWebView2InitializationCompleted += OnCoreWebView2Ready;
-        _ = InitializeAsync();
-    }
 
-    private async Task InitializeAsync()
-    {
-        await WebMap.EnsureCoreWebView2Async(null);
-    }
-
-    private void OnCoreWebView2Ready(object? sender, CoreWebView2InitializationCompletedEventArgs e)
-    {
-        if (!e.IsSuccess) return;
-        WebMap.CoreWebView2.Settings.IsScriptEnabled = true;
-        WebMap.CoreWebView2.Settings.AreDefaultScriptDialogsEnabled = false;
-        WebMap.CoreWebView2.Settings.IsWebMessageEnabled = true;
-
-        WebMap.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
-
-        // 用虚拟主机映射 Resources 目录，本地加载 Leaflet（完全离线）
-        var resPath = FindResourcesPath();
-        if (!string.IsNullOrEmpty(resPath))
-            WebMap.CoreWebView2.SetVirtualHostNameToFolderMapping(
-                "leaflet.local", resPath,
-                CoreWebView2HostResourceAccessKind.Allow);
-
-        var html = BuildLeafletHtml();
-        WebMap.NavigateToString(html);
-    }
-
-    private void OnWebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
-    {
-        var msg = e.TryGetWebMessageAsString();
-        if (msg == "\"map-ready\"")
-        {
-            _mapReady = true;
-            Dispatcher.Invoke(() =>
-            {
-                while (_pendingScripts.Count > 0)
-                {
-                    var script = _pendingScripts.Dequeue();
-                    WebMap.CoreWebView2.ExecuteScriptAsync(script);
-                }
-            });
-        }
-    }
-
-    /// <summary>
-    /// Ensure a script runs either immediately (if map is ready) or as soon as the map is ready.
-    /// </summary>
-    public async Task RunScriptAsync(string script)
-    {
-        if (_mapReady && WebMap.CoreWebView2 != null)
-        {
-            await WebMap.CoreWebView2.ExecuteScriptAsync(script);
-        }
-        else
-        {
-            _pendingScripts.Enqueue(script);
-        }
+        _map = new Esri.ArcGISRuntime.Mapping.Map(SpatialReferences.Wgs84);
+        EsriMapView.Map = _map;
     }
 
     #region Public API
 
-    /// <summary>
-    /// Add a vector layer from GeoJSON string. Optionally pass initial style properties.
-    /// </summary>
-    public async Task<string> AddVectorLayerAsync(string name, string geojson, Models.VectorSymbol? style = null)
+    public async Task<string> AddVectorLayerAsync(string name, string filePath, Models.VectorSymbol? style = null)
     {
-        var layerId = $"layer_{Interlocked.Increment(ref _layerIdCounter)}";
-        // Escape backslashes and quotes for safe JS embedding
-        var escapedJson = geojson
-            .Replace("\\", "\\\\")
-            .Replace("'", "\\'")
-            .Replace("\r", "")
-            .Replace("\n", " ");
+        var layerId = $"layer_{Guid.NewGuid():N}";
+        try
+        {
+            var table = await ShapefileFeatureTable.OpenAsync(filePath);
+            var layer = new FeatureLayer(table) { Name = name };
 
-        var styleJs = style != null ? BuildStyleJsObject(style) : "null";
-        var script = $@"addVectorLayer('{layerId}', '{name}', '{escapedJson}', {styleJs});";
-        await RunScriptAsync(script);
+            // Apply initial symbology
+            if (style != null)
+                ApplyVectorStyle(layer, style);
 
-        // Also zoom to the layer if it's the first one
-        await RunScriptAsync($"zoomToLayer('{layerId}');");
+            _map.OperationalLayers.Add(layer);
+            _layerLookup[layerId] = layer;
 
+            await EsriMapView.SetViewpointGeometryAsync(layer.FullExtent);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"AddVectorLayer failed: {ex.Message}");
+            return "";
+        }
         return layerId;
     }
 
-    /// <summary>
-    /// Push a layer's current VectorSymbol/RasterSymbol style to the JS map.
-    /// </summary>
-    public async Task UpdateLayerStyleAsync(Services.MapLayer layer)
-    {
-        if (layer.VectorSymbol == null && layer.RasterSymbol == null) return;
-
-        var ci = System.Globalization.CultureInfo.InvariantCulture;
-        string styleObj;
-
-        if (layer.VectorSymbol != null)
-        {
-            var vs = layer.VectorSymbol;
-            var geom = layer.Symbols.Count > 0 ? layer.Symbols[0].Geometry : Models.SymbolGeometry.Polygon;
-            styleObj = geom switch
-            {
-                Models.SymbolGeometry.Polygon => string.Format(ci,
-                    "{{ color: '{0}', weight: {1:F1}, fillColor: '{2}', fillOpacity: {3:F2} }}",
-                    vs.StrokeColor, vs.StrokeWidth, vs.FillColor, vs.FillOpacity),
-                Models.SymbolGeometry.Line => string.Format(ci,
-                    "{{ color: '{0}', weight: {1:F1} }}",
-                    vs.StrokeColor, vs.StrokeWidth),
-                Models.SymbolGeometry.Point => string.Format(ci,
-                    "{{ color: '{0}', fillColor: '{0}', fillOpacity: 0.7, weight: 2, radius: {1:F1} }}",
-                    vs.PointColor, vs.PointSize),
-                _ => "{}"
-            };
-        }
-        else
-        {
-            styleObj = "{ opacity: 0.8 }";
-        }
-
-        await RunScriptAsync($"updateLayerStyle('{layer.LayerId}', {styleObj});");
-    }
-
-    private static string BuildStyleJsObject(Models.VectorSymbol vs)
-    {
-        var ci = System.Globalization.CultureInfo.InvariantCulture;
-        return string.Format(ci,
-            "{{ strokeColor: '{0}', strokeWidth: {1:F1}, fillColor: '{2}', fillOpacity: {3:F2}, pointColor: '{4}', pointSize: {5:F1} }}",
-            vs.StrokeColor, vs.StrokeWidth, vs.FillColor, vs.FillOpacity, vs.PointColor, vs.PointSize);
-    }
-
-    /// <summary>
-    /// Add a raster layer from a local image file path. The file is read, converted to base64 PNG,
-    /// and displayed as a Leaflet ImageOverlay using bounds read from the world file.
-    /// </summary>
     public async Task<string> AddRasterLayerAsync(string name, string filePath)
     {
+        var layerId = $"layer_{Guid.NewGuid():N}";
         try
         {
-            // Read bounds from world file (.tfw)
-            var (north, south, east, west) = ReadRasterBounds(filePath);
+            var raster = new Esri.ArcGISRuntime.Rasters.Raster(filePath);
+            var layer = new RasterLayer(raster) { Name = name };
 
-            // Convert raster to base64 PNG for Leaflet
-            var base64Png = ConvertRasterToBase64Png(filePath);
-            if (base64Png == null) return "";
+            _map.OperationalLayers.Add(layer);
+            _layerLookup[layerId] = layer;
 
-            var layerId = $"layer_{Interlocked.Increment(ref _layerIdCounter)}";
-            var script = $@"addRasterLayer('{layerId}', '{name}', '{base64Png}', {south.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {west.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {north.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {east.ToString(System.Globalization.CultureInfo.InvariantCulture)});";
-            await RunScriptAsync(script);
-            await RunScriptAsync($"zoomToLayer('{layerId}');");
-
-            return layerId;
+            await EsriMapView.SetViewpointGeometryAsync(layer.FullExtent);
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to add raster layer: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"AddRasterLayer failed: {ex.Message}");
             return "";
         }
+        return layerId;
     }
 
-    /// <summary>
-    /// Remove a layer by its ID.
-    /// </summary>
-    public async Task RemoveLayerAsync(string layerId)
-    {
-        await RunScriptAsync($"removeLayer('{layerId}');");
-    }
-
-    /// <summary>
-    /// Zoom the map to fit a specific layer.
-    /// </summary>
-    public async Task ZoomToLayerAsync(string layerId)
-    {
-        await RunScriptAsync($"zoomToLayer('{layerId}');");
-    }
-
-    /// <summary>
-    /// Clear all layers from the map.
-    /// </summary>
-    public async Task ClearAllLayersAsync()
-    {
-        await RunScriptAsync("clearAllLayers();");
-    }
-
-    #endregion
-
-    #region Raster helpers
-
-    /// <summary>
-    /// Read geographic bounds from a world file (.tfw) associated with the raster.
-    /// Returns (north, south, east, west).
-    /// If no .tfw exists, returns approximate bounds around CZT region.
-    /// </summary>
-    private static (double north, double south, double east, double west) ReadRasterBounds(string rasterPath)
-    {
-        var dir = Path.GetDirectoryName(rasterPath) ?? "";
-        var baseName = Path.GetFileNameWithoutExtension(rasterPath);
-
-        // Try .tfw (World file for GeoTIFF)
-        var tfwPath = Path.Combine(dir, baseName + ".tfw");
-        if (!File.Exists(tfwPath))
-        {
-            // Try .tif + .tfw
-            tfwPath = rasterPath + ".tfw";
-        }
-        if (!File.Exists(tfwPath))
-        {
-            // Try alternate naming: some files have extension.tfw (e.g. .tif.tfw)
-            tfwPath = rasterPath.Substring(0, rasterPath.LastIndexOf('.')) + ".tfw";
-        }
-
-        if (File.Exists(tfwPath))
-        {
-            try
-            {
-                var lines = File.ReadAllLines(tfwPath);
-                if (lines.Length >= 6)
-                {
-                    double pixelX = double.Parse(lines[0], System.Globalization.CultureInfo.InvariantCulture);
-                    double rotationY = double.Parse(lines[1], System.Globalization.CultureInfo.InvariantCulture);
-                    double rotationX = double.Parse(lines[2], System.Globalization.CultureInfo.InvariantCulture);
-                    double pixelY = double.Parse(lines[3], System.Globalization.CultureInfo.InvariantCulture);
-                    double upperLeftX = double.Parse(lines[4], System.Globalization.CultureInfo.InvariantCulture);
-                    double upperLeftY = double.Parse(lines[5], System.Globalization.CultureInfo.InvariantCulture);
-
-                    // Estimate image dimensions
-                    int imgWidth = 1000, imgHeight = 1000;
-                    try
-                    {
-                        var decoder = new TiffBitmapDecoder(
-                            new Uri(rasterPath), BitmapCreateOptions.None, BitmapCacheOption.OnDemand);
-                        if (decoder.Frames.Count > 0)
-                        {
-                            imgWidth = decoder.Frames[0].PixelWidth;
-                            imgHeight = decoder.Frames[0].PixelHeight;
-                        }
-                    }
-                    catch { /* use defaults */ }
-
-                    double west = upperLeftX;
-                    double north = upperLeftY;
-                    double east = upperLeftX + imgWidth * pixelX;
-                    double south = upperLeftY + imgHeight * pixelY;
-
-                    return (north, south, east, west);
-                }
-            }
-            catch { /* fall through to default */ }
-        }
-
-        // Default: CZT region approximate bounds
-        return (28.5, 27.5, 113.5, 112.5);
-    }
-
-    /// <summary>
-    /// Convert a raster file (GeoTIFF) to a base64-encoded PNG string for Leaflet display.
-    /// </summary>
-    private static string? ConvertRasterToBase64Png(string filePath)
+    public Task UpdateLayerStyleAsync(Services.MapLayer layer)
     {
         try
         {
-            // For .png files, read directly
-            if (filePath.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+            if (layer.VectorSymbol == null || !_layerLookup.TryGetValue(layer.LayerId, out var l))
+                return Task.CompletedTask;
+
+            if (l is FeatureLayer fl)
             {
-                var bytes = File.ReadAllBytes(filePath);
-                return Convert.ToBase64String(bytes);
+                ApplyVectorStyle(fl, layer.VectorSymbol);
             }
-
-            // For .tif/.tiff, use WPF TiffBitmapDecoder
-            var decoder = new TiffBitmapDecoder(
-                new Uri(filePath), BitmapCreateOptions.None, BitmapCacheOption.OnDemand);
-
-            if (decoder.Frames.Count == 0) return null;
-
-            var frame = decoder.Frames[0];
-
-            // Resize if the image is too large (>2000px) for browser performance
-            int maxDim = 2000;
-            int targetW = frame.PixelWidth;
-            int targetH = frame.PixelHeight;
-            if (targetW > maxDim || targetH > maxDim)
-            {
-                double scale = Math.Min((double)maxDim / targetW, (double)maxDim / targetH);
-                targetW = (int)(targetW * scale);
-                targetH = (int)(targetH * scale);
-            }
-
-            // Render to a RenderTargetBitmap
-            var visual = new DrawingVisual();
-            using (var ctx = visual.RenderOpen())
-            {
-                ctx.DrawImage(frame, new Rect(0, 0, targetW, targetH));
-            }
-
-            var rtb = new RenderTargetBitmap(targetW, targetH, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
-            rtb.Render(visual);
-
-            // Encode to PNG
-            var pngEncoder = new PngBitmapEncoder();
-            pngEncoder.Frames.Add(BitmapFrame.Create(rtb));
-
-            using var ms = new MemoryStream();
-            pngEncoder.Save(ms);
-            return Convert.ToBase64String(ms.ToArray());
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Raster conversion failed: {ex.Message}");
-            return null;
+            System.Diagnostics.Debug.WriteLine($"UpdateLayerStyle failed: {ex.Message}");
         }
+        return Task.CompletedTask;
+    }
+
+    public async Task RemoveLayerAsync(string layerId)
+    {
+        if (_layerLookup.TryGetValue(layerId, out var l))
+        {
+            _map.OperationalLayers.Remove(l);
+            _layerLookup.Remove(layerId);
+        }
+    }
+
+    public async Task ZoomToLayerAsync(string layerId)
+    {
+        if (_layerLookup.TryGetValue(layerId, out var l) && l.FullExtent != null)
+            await EsriMapView.SetViewpointGeometryAsync(l.FullExtent);
+    }
+
+    public Task ClearAllLayersAsync()
+    {
+        _map.OperationalLayers.Clear();
+        _layerLookup.Clear();
+        return Task.CompletedTask;
     }
 
     #endregion
 
-    #region HTML generation
+    #region Symbology
 
-    /// <summary>
-    /// Build self-contained Leaflet HTML with layer management JS.
-    /// </summary>
-    private string BuildLeafletHtml()
+    private static void ApplyVectorStyle(FeatureLayer layer, Models.VectorSymbol vs)
     {
-        // 用虚拟主机 URL 加载本地 Leaflet（https://leaflet.local/xxx）
-        var sb = new StringBuilder();
-        sb.Append(@"<!DOCTYPE html>
-<html lang=""zh-CN"">
-<head>
-<meta charset=""UTF-8"">
-<meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
-<title>Map</title>
-<link rel=""stylesheet"" href=""https://leaflet.local/leaflet.css"" />
-<style>
-  html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; }
-  #map { width:100%; height:100%; background:#FFFFFF; }
-</style>
-</head>
-<body>
-<div id=""map""></div>
+        var geom = layer.FeatureTable?.GeometryType;
+        if (geom == null) return;
 
-<script src=""https://leaflet.local/leaflet.js""></script>
-<script>
-var map = L.map('map', {
-  center: [27.9, 113.0],
-  zoom: 9,
-  zoomControl: true,
-  attributionControl: false
-});
-
-// 默认底图（OSM 在线瓦片，有网时显示世界地图）
-var basemap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19, opacity: 0.5, attribution: '© OSM'
-}).addTo(map);
-
-// Layer registry（basemap 作为特殊图层可以 toggle）
-var layers = {};
-layers['basemap'] = { name: '底图', leafletLayer: basemap, type: 'basemap' };
-
-function addVectorLayer(id, name, geojsonStr, styleProps) {
-  // Remove existing layer with same ID
-  if (layers[id]) { map.removeLayer(layers[id].leafletLayer); }
-
-  var geojson = JSON.parse(geojsonStr);
-  var props = styleProps || {};
-  var lyr = L.geoJSON(geojson, {
-    style: function(feature) {
-      var gt = feature.geometry.type;
-      var s = {
-        color: props.strokeColor || '#1565C0',
-        weight: props.strokeWidth || 2
-      };
-      // 只有面状几何类型才设置填充属性
-      if (gt === 'Polygon' || gt === 'MultiPolygon') {
-        s.fillColor = props.fillColor || '#64B5F6';
-        s.fillOpacity = props.fillOpacity || 0.3;
-      }
-      return s;
-    },
-    pointToLayer: function(feature, latlng) {
-      return L.circleMarker(latlng, {
-        radius: props.pointSize || 6,
-        color: props.pointColor || '#E81123',
-        fillColor: props.pointColor || '#E81123',
-        fillOpacity: 0.7,
-        weight: 2
-      });
-    }
-  }).addTo(map);
-
-  layers[id] = { name: name, leafletLayer: lyr, type: 'vector' };
-
-}
-
-function addRasterLayer(id, name, base64data, south, west, north, east) {
-  if (layers[id]) { map.removeLayer(layers[id].leafletLayer); }
-
-  var imgUrl = 'data:image/png;base64,' + base64data;
-  var bounds = [[south, west], [north, east]];
-  var lyr = L.imageOverlay(imgUrl, bounds, { opacity: 0.8 }).addTo(map);
-
-  layers[id] = { name: name, leafletLayer: lyr, type: 'raster' };
-  
-}
-
-function updateLayerStyle(id, style) {
-  var l = layers[id];
-  if (!l || !l.leafletLayer) return;
-
-  if (l.type === 'vector') {
-    l.leafletLayer.eachLayer(function(lyr) {
-      // 点图层：更新半径
-      if (typeof lyr.setRadius === 'function' && style.radius !== undefined)
-        lyr.setRadius(style.radius);
-      // 所有矢量图层：更新颜色/线宽/填充
-      if (typeof lyr.setStyle === 'function') {
-        var s = {};
-        if (style.color !== undefined) s.color = style.color;
-        if (style.weight !== undefined) s.weight = style.weight;
-        if (style.fillColor !== undefined) s.fillColor = style.fillColor;
-        if (style.fillOpacity !== undefined) s.fillOpacity = style.fillOpacity;
-        lyr.setStyle(s);
-      }
-    });
-  } else if (l.type === 'raster' && style.opacity !== undefined) {
-    l.leafletLayer.setOpacity(style.opacity);
-  }
-}
-
-function removeLayer(id) {
-  if (layers[id]) {
-    map.removeLayer(layers[id].leafletLayer);
-    delete layers[id];
-  }
-  
-}
-
-function zoomToLayer(id) {
-  if (layers[id] && layers[id].leafletLayer.getBounds) {
-    map.fitBounds(layers[id].leafletLayer.getBounds(), { padding: [30, 30] });
-  }
-}
-
-function toggleLayer(id, visible) {
-  if (layers[id]) {
-    if (visible) {
-      layers[id].leafletLayer.addTo(map);
-    } else {
-      map.removeLayer(layers[id].leafletLayer);
-    }
-  }
-}
-
-function clearAllLayers() {
-  Object.keys(layers).forEach(function(id) {
-    map.removeLayer(layers[id].leafletLayer);
-  });
-  layers = {};
-  
-}
-
-// Notify C# that the map is ready
-try { window.chrome.webview.postMessage('""map-ready""'); } catch(e) {}
-</script>
-</body>
-</html>");
-        return sb.ToString();
-    }
-
-    /// <summary>
-    /// 查找 Resources 文件夹路径（包含 leaflet.js/css）
-    /// </summary>
-    private static string FindResourcesPath()
-    {
-        string[] candidates =
+        var renderer = geom switch
         {
-            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources"),
-            Path.Combine(Directory.GetCurrentDirectory(), "Resources"),
+            GeometryType.Point => (Renderer)new SimpleRenderer(
+                new SimpleMarkerSymbol
+                {
+                    Color = ParseEsriColor(vs.PointColor),
+                    Size = vs.PointSize,
+                    Style = SimpleMarkerSymbolStyle.Circle
+                }),
+            GeometryType.Polyline => new SimpleRenderer(
+                new SimpleLineSymbol
+                {
+                    Color = ParseEsriColor(vs.StrokeColor),
+                    Width = vs.StrokeWidth
+                }),
+            _ => new SimpleRenderer(
+                new SimpleFillSymbol
+                {
+                    Color = ParseEsriColor(vs.FillColor, (byte)(vs.FillOpacity * 255)),
+                    Outline = new SimpleLineSymbol
+                    {
+                        Color = ParseEsriColor(vs.StrokeColor),
+                        Width = vs.StrokeWidth
+                    }
+                })
         };
-        // 往上找 (bin/Debug → 项目根)
-        var parent = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory)?.Parent?.FullName;
-        if (parent != null)
-            candidates = candidates.Append(Path.Combine(parent, "Resources")).ToArray();
 
-        foreach (var dir in candidates)
+        layer.Renderer = renderer;
+    }
+
+    private static System.Drawing.Color ParseEsriColor(string hex, byte alpha = 255)
+    {
+        try
         {
-            if (Directory.Exists(dir) && File.Exists(Path.Combine(dir, "leaflet.js")))
-                return dir;
+            var c = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex);
+            return System.Drawing.Color.FromArgb(alpha, c.R, c.G, c.B);
         }
-        return "";
+        catch { return System.Drawing.Color.Gray; }
     }
 
     #endregion
