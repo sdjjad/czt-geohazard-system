@@ -65,19 +65,12 @@ public class RasterSymbol : INotifyPropertyChanged
 }
 
 /// <summary>
-/// 图层面板中显示的子项（符号条目），包含几何类型和完整符号信息
+/// 图层面板中显示的子项（符号条目），引用父图层以获取真实符号
 /// </summary>
 public class SymbolItem
 {
     public string Label { get; set; } = "";
     public SymbolGeometry Geometry { get; set; } = SymbolGeometry.Polygon;
-    public string FillColor { get; set; } = "#64B5F6";
-    public double FillOpacity { get; set; } = 0.3;
-    public string StrokeColor { get; set; } = "#1565C0";
-    public double StrokeWidth { get; set; } = 2;
-    public double PointSize { get; set; } = 8;
-    public string PointColor { get; set; } = "#E81123";
-    /// <summary>栅格渐变色（起点→终点）</summary>
-    public string RampFrom { get; set; } = "#000000";
-    public string RampTo { get; set; } = "#FFFFFF";
+    /// <summary>所属图层引用，读取真实 VectorSymbol / RasterSymbol</summary>
+    public object? Layer { get; set; }
 }

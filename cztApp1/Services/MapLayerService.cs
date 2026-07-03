@@ -88,27 +88,16 @@ public class MapLayerService
             RasterSymbol = !isVector ? new RasterSymbol() : null
         };
 
-        // 每层一个默认符号子项，根据几何类型显示真实符号预览
+        // 每层一个符号子项，引用父图层以读取真实符号值
         if (isVector && layer.VectorSymbol != null)
         {
             var vs = layer.VectorSymbol;
             var geom = DetectGeometryType(filePath);
-            layer.Symbols.Add(new SymbolItem
-            {
-                Label = "符号",
-                Geometry = geom,
-                FillColor = vs.FillColor,
-                FillOpacity = vs.FillOpacity,
-                StrokeColor = vs.StrokeColor,
-                StrokeWidth = vs.StrokeWidth,
-                PointColor = vs.PointColor,
-                PointSize = vs.PointSize
-            });
             // 根据几何类型调整默认符号
             switch (geom)
             {
                 case SymbolGeometry.Line:
-                    vs.FillColor = "#00000000"; // 透明填充
+                    vs.FillColor = "#00000000";
                     vs.StrokeColor = "#1565C0";
                     vs.StrokeWidth = 2;
                     break;
@@ -117,16 +106,18 @@ public class MapLayerService
                     vs.PointSize = 8;
                     break;
             }
+            layer.Symbols.Add(new SymbolItem
+            {
+                Geometry = geom,
+                Layer = layer
+            });
         }
         else if (layer.RasterSymbol != null)
         {
-            var rs = layer.RasterSymbol;
             layer.Symbols.Add(new SymbolItem
             {
-                Label = "色带",
                 Geometry = SymbolGeometry.Raster,
-                RampFrom = rs.Stops.Count > 0 ? rs.Stops[0].Color : "#000000",
-                RampTo = rs.Stops.Count > 1 ? rs.Stops[^1].Color : "#FFFFFF"
+                Layer = layer
             });
         }
 
