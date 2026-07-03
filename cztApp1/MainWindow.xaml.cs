@@ -168,6 +168,16 @@ namespace cztApp1
                 border.Focus();
         }
 
+        private void GeoPanel_GotFocus(object sender, MouseButtonEventArgs e) { }
+        private void GeoOptions_Click(object sender, RoutedEventArgs e) { }
+        private void GeoAutoHide_Click(object sender, RoutedEventArgs e) { }
+
+        private void GeoPanelClose_Click(object sender, RoutedEventArgs e)
+        {
+            GeoPanelHost.Visibility = Visibility.Collapsed;
+            GeoSplitter.Visibility = Visibility.Collapsed;
+        }
+
         private void ViewMenu_Click(object sender, RoutedEventArgs e)
         {
             // 动态检测各面板当前可见状态，更新勾选标记
@@ -182,9 +192,11 @@ namespace cztApp1
             var miData = new MenuItem { Header = $"{Chk(dataVisible)}数据面板", Tag = "Data" };
             var miMap  = new MenuItem { Header = $"{Chk(mapVisible)}地图视图", Tag = "Map" };
             var miLayer= new MenuItem { Header = $"{Chk(layerVisible)}图层面板", Tag = "Layer" };
+            bool geoVisible = GeoPanelHost.Visibility == Visibility.Visible;
             var miSym  = new MenuItem { Header = $"{Chk(symbolVisible)}符号系统", Tag = "Symbol" };
+            var miGeo  = new MenuItem { Header = $"{Chk(geoVisible)}地理处理", Tag = "Geo" };
 
-            foreach (var mi in new[] { miData, miMap, miLayer, miSym })
+            foreach (var mi in new[] { miData, miMap, miLayer, miSym, miGeo })
             {
                 mi.Click += ViewMenuItem_Click;
                 menu.Items.Add(mi);
@@ -241,7 +253,6 @@ namespace cztApp1
                         SymbolPanelClose_Click(sender, e);
                     else
                     {
-                        // 打开符号面板（不设置内容，只显示空面板）
                         MainContentGrid.ColumnDefinitions[4].MinWidth = 150;
                         MainContentGrid.ColumnDefinitions[4].Width = new GridLength(220);
                         if (FindName("RightOuterSplitter") is GridSplitter rs2)
@@ -251,6 +262,20 @@ namespace cztApp1
                         RightPanelGrid.RowDefinitions[0].Height = new GridLength(3, GridUnitType.Star);
                         RightPanelGrid.RowDefinitions[2].Height = new GridLength(1, GridUnitType.Star);
                         SymbolPanelTitle.Text = "符号系统";
+                    }
+                    break;
+
+                case "Geo":
+                    if (GeoPanelHost.Visibility == Visibility.Visible)
+                        GeoPanelClose_Click(sender, e);
+                    else
+                    {
+                        MainContentGrid.ColumnDefinitions[4].MinWidth = 150;
+                        MainContentGrid.ColumnDefinitions[4].Width = new GridLength(220);
+                        if (FindName("RightOuterSplitter") is GridSplitter rs3)
+                            rs3.Visibility = Visibility.Visible;
+                        GeoPanelHost.Visibility = Visibility.Visible;
+                        GeoSplitter.Visibility = Visibility.Visible;
                     }
                     break;
             }
@@ -314,8 +339,9 @@ namespace cztApp1
                 layerVisible = layerBorder.Visibility == Visibility.Visible;
 
             bool symbolVisible = SymbolPanelHost.Visibility == Visibility.Visible;
+            bool geoVisible = GeoPanelHost.Visibility == Visibility.Visible;
 
-            if (!layerVisible && !symbolVisible)
+            if (!layerVisible && !symbolVisible && !geoVisible)
             {
                 MainContentGrid.ColumnDefinitions[4].MinWidth = 0;
                 MainContentGrid.ColumnDefinitions[4].Width = new GridLength(0);

@@ -665,6 +665,8 @@
                         <RowDefinition Height="*" MinHeight="100"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                 <!-- 图层面板 -->
@@ -888,6 +890,54 @@
                                 </Grid.ColumnDefinitions>
                             </Grid>
                         </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- 符号面板与地理处理面板之间的分隔条 -->
+                <GridSplitter Grid.Row="3" x:Name="GeoSplitter" Height="4"
+                              HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                              Background="Transparent" ResizeBehavior="PreviousAndNext"
+                              Visibility="Collapsed"/>
+
+                <!-- 地理处理面板 -->
+                <Border Grid.Row="4" x:Name="GeoPanelHost" Visibility="Collapsed"
+                        Style="{StaticResource PanelBorderStyle}" Margin="0,4,0,0"
+                        MouseDown="GeoPanel_GotFocus">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="地理处理"
+                                       Style="{StaticResource PanelTitleStyle}"/>
+                            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                <Button Style="{StaticResource PanelIconBtnStyle}"
+                                        Click="GeoOptions_Click" ToolTip="选项">
+                                    <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets"
+                                               FontSize="8" Foreground="#444444"/>
+                                </Button>
+                                <Button Style="{StaticResource PanelIconBtnStyle}"
+                                        Click="GeoAutoHide_Click" ToolTip="自动隐藏">
+                                    <TextBlock Text="&#xE77A;" FontFamily="Segoe MDL2 Assets"
+                                               FontSize="10" Foreground="#444444"/>
+                                </Button>
+                                <Button Style="{StaticResource PanelIconBtnStyle}"
+                                        Click="GeoPanelClose_Click" ToolTip="关闭面板">
+                                    <TextBlock Text="&#xE8BB;" FontFamily="Segoe MDL2 Assets"
+                                               FontSize="10" Foreground="#444444"/>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+
+                        <ContentControl Grid.Row="1" x:Name="GeoPanelContent"
+                                        Margin="0,0,0,4"/>
                     </Grid>
                 </Border>
             </Grid>
