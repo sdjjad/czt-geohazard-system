@@ -274,16 +274,17 @@ public class MapLayerService
     }
 
     /// <summary>
-    /// 检测 shapefile 几何类型（面/线/点）
+    /// 检测 shapefile 几何类型（面/线/点）——直接读文件头，不锁文件
     /// </summary>
     private static SymbolGeometry DetectGeometryType(string filePath)
     {
         try
         {
             if (!File.Exists(filePath)) return SymbolGeometry.Polygon;
-            var factory = new GeometryFactory();
-            using var reader = new ShapefileDataReader(filePath, factory);
-            var shapeType = (int)reader.ShapeHeader.ShapeType;
+            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            var header = new byte[36];
+            fs.ReadExactly(header, 0, 36);
+            var shapeType = BitConverter.ToInt32(header, 32);
             return shapeType switch
             {
                 1 or 11 or 21 => SymbolGeometry.Point,

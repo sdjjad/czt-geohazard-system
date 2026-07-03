@@ -330,7 +330,8 @@ namespace cztApp1
 
             if (isVector && layer.VectorSymbol != null)
             {
-                BuildVectorSymbolEditor(layer.VectorSymbol);
+                var geom = layer.Symbols.Count > 0 ? layer.Symbols[0].Geometry : SymbolGeometry.Polygon;
+                BuildVectorSymbolEditor(layer, geom);
             }
             else if (!isVector && layer.RasterSymbol != null)
             {
@@ -338,58 +339,149 @@ namespace cztApp1
             }
         }
 
-        private void BuildVectorSymbolEditor(VectorSymbol vs)
+        /// <summary>编辑后刷新图层面板中的符号预览 + 地图样式</summary>
+        private void OnSymbolEdited(MapLayer layer)
         {
+            // 刷新 TreeView 中的符号预览（替换触发 ObservableCollection 更新）
+            if (layer.Symbols.Count > 0)
+            {
+                var sym = layer.Symbols[0];
+                layer.Symbols[0] = sym;
+            }
+            // 更新地图样式
+            _ = UpdateMapStyle(layer);
+        }
+
+        private async Task UpdateMapStyle(MapLayer layer)
+        {
+            if (layer.VectorSymbol == null) return;
+            var vs = layer.VectorSymbol;
+            var fill = vs.FillColor;
+            var opacity = vs.FillOpacity;
+            var stroke = vs.StrokeColor;
+            var width = vs.StrokeWidth;
+            var pColor = vs.PointColor;
+            var pSize = vs.PointSize;
+            var script = $@"
+(function(){{
+  var l = layers['{layer.LayerId}'];
+  if (!l || !l.leafletLayer) return;
+  if (l.type === 'vector') {{
+    l.leafletLayer.setStyle({{ color: '{stroke}', weight: {width}, fillColor: '{fill}', fillOpacity: {opacity} }});
+    l.leafletLayer.eachLayer(function(lyr) {{
+      if (lyr.setStyle) lyr.setStyle({{ color: '{stroke}', weight: {width}, fillColor: '{fill}', fillOpacity: {opacity} }});
+      if (lyr.setRadius) lyr.setRadius({pSize});
+      if (lyr.options && lyr.options.fillColor !== undefined) {{
+        lyr.setStyle({{ color: '{pColor}', fillColor: '{pColor}' }});
+      }}
+    }});
+  }}
+}})();";
+            await MapViewControl.RunScriptAsync(script);
+        }
+
+        private void BuildVectorSymbolEditor(MapLayer layer, SymbolGeometry geom)
+        {
+            var vs = layer.VectorSymbol!;
             var sp = new StackPanel();
             var grid = new Grid { Margin = new Thickness(0, 2, 0, 4) };
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(70) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(60) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(54) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
             int row = 0;
+            Action onChanged = () => OnSymbolEdited(layer);
 
-            // 填充颜色
-            AddColorRow(grid, ref row, "填充颜色", vs.FillColor, c => vs.FillColor = c);
-            // 填充透明度
-            AddSliderRow(grid, ref row, "填充透明度", vs.FillOpacity, 0, 1, v => vs.FillOpacity = v);
-            // 轮廓颜色
-            AddColorRow(grid, ref row, "轮廓颜色", vs.StrokeColor, c => vs.StrokeColor = c);
-            // 轮廓宽度
-            AddNumRow(grid, ref row, "轮廓宽度", vs.StrokeWidth, v => vs.StrokeWidth = v);
-            // 点大小
-            AddNumRow(grid, ref row, "点大小", vs.PointSize, v => vs.PointSize = v);
+            if (geom == SymbolGeometry.Polygon)
+            {
+                AddColorRow(grid, ref row, "填充颜色", vs.FillColor, c => { vs.FillColor = c; onChanged(); });
+                AddSliderRow(grid, ref row, "透明度", vs.FillOpacity, 0, 1, v => { vs.FillOpacity = v; onChanged(); });
+                AddColorRow(grid, ref row, "轮廓颜色", vs.StrokeColor, c => { vs.StrokeColor = c; onChanged(); });
+                AddNumRow(grid, ref row, "轮廓宽度", vs.StrokeWidth, v => { vs.StrokeWidth = v; onChanged(); });
+            }
+            else if (geom == SymbolGeometry.Line)
+            {
+                AddColorRow(grid, ref row, "线颜色", vs.StrokeColor, c => { vs.StrokeColor = c; onChanged(); });
+                AddNumRow(grid, ref row, "线宽度", vs.StrokeWidth, v => { vs.StrokeWidth = v; onChanged(); });
+            }
+            else if (geom == SymbolGeometry.Point)
+            {
+                AddColorRow(grid, ref row, "点颜色", vs.PointColor, c => { vs.PointColor = c; onChanged(); });
+                AddNumRow(grid, ref row, "点大小", vs.PointSize, v => { vs.PointSize = v; onChanged(); });
+            }
 
             sp.Children.Add(grid);
 
-            // 预览
-            var preview = new Border
-            {
-                Width = 60, Height = 40, Margin = new Thickness(0, 6, 0, 0),
-                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(vs.StrokeColor)!),
-                BorderThickness = new Thickness(vs.StrokeWidth),
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(vs.FillColor)!) { Opacity = vs.FillOpacity }
-            };
+            // 预览图形
+            var preview = BuildSymbolPreview(vs, geom);
             vs.PropertyChanged += (_, _) =>
             {
-                preview.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(vs.StrokeColor)!);
-                preview.BorderThickness = new Thickness(vs.StrokeWidth);
-                preview.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(vs.FillColor)!) { Opacity = vs.FillOpacity };
+                SymbolEditorHost.Children.Clear();
+                sp.Children.Remove(preview);
+                preview = BuildSymbolPreview(vs, geom);
+                sp.Children.Add(preview);
             };
             sp.Children.Add(preview);
             SymbolEditorHost.Children.Add(sp);
         }
 
+        private static FrameworkElement BuildSymbolPreview(VectorSymbol vs, SymbolGeometry geom)
+        {
+            if (geom == SymbolGeometry.Line)
+            {
+                var color = (Color)ColorConverter.ConvertFromString(vs.StrokeColor);
+                return new System.Windows.Shapes.Line
+                {
+                    X1 = 4, Y1 = 12, X2 = 56, Y2 = 12,
+                    Stroke = new SolidColorBrush(color),
+                    StrokeThickness = Math.Max(1.5, vs.StrokeWidth),
+                    StrokeEndLineCap = PenLineCap.Round,
+                    StrokeStartLineCap = PenLineCap.Round,
+                    Margin = new Thickness(0, 6, 0, 0), Width = 60, Height = 24
+                };
+            }
+            if (geom == SymbolGeometry.Point)
+            {
+                var color = (Color)ColorConverter.ConvertFromString(vs.PointColor);
+                return new System.Windows.Shapes.Ellipse
+                {
+                    Width = Math.Min(24, vs.PointSize * 2),
+                    Height = Math.Min(24, vs.PointSize * 2),
+                    Fill = new SolidColorBrush(color),
+                    Stroke = new SolidColorBrush(Colors.Gray),
+                    StrokeThickness = 1,
+                    Margin = new Thickness(0, 6, 0, 0),
+                    HorizontalAlignment = HorizontalAlignment.Left
+                };
+            }
+            // 默认：多边形矩形
+            var fill = (Color)ColorConverter.ConvertFromString(vs.FillColor);
+            fill.A = (byte)(vs.FillOpacity * 255);
+            var stroke = (Color)ColorConverter.ConvertFromString(vs.StrokeColor);
+            return new Border
+            {
+                Width = 60, Height = 36,
+                Background = new SolidColorBrush(fill),
+                BorderBrush = new SolidColorBrush(stroke),
+                BorderThickness = new Thickness(Math.Max(1, vs.StrokeWidth)),
+                Margin = new Thickness(0, 6, 0, 0)
+            };
+        }
+
         private void BuildRasterSymbolEditor(RasterSymbol rs)
         {
             var sp = new StackPanel();
-            sp.Children.Add(new TextBlock
+            var label = new TextBlock
             {
-                Text = "色带设置（暂用灰度默认）",
-                FontSize = 10, Foreground = new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88)),
-                Margin = new Thickness(0, 4, 0, 8)
-            });
-            // 简单预览：渐变条
-            var bar = new Border { Height = 16, CornerRadius = new CornerRadius(2), Margin = new Thickness(0, 0, 0, 4) };
+                Text = "色带设置",
+                FontSize = 10,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x44, 0x44, 0x44)),
+                Margin = new Thickness(0, 2, 0, 4)
+            };
+            sp.Children.Add(label);
+
+            // 渐变色带预览
+            var bar = new Border { Height = 18, CornerRadius = new CornerRadius(2), Margin = new Thickness(0, 0, 0, 8) };
             var gradient = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 0) };
             foreach (var stop in rs.Stops)
             {
@@ -399,111 +491,128 @@ namespace cztApp1
             }
             bar.Background = gradient;
             sp.Children.Add(bar);
+
+            // 色带节点编辑
+            for (int i = 0; i < rs.Stops.Count; i++)
+            {
+                var stop = rs.Stops[i];
+                var idx = i;
+                var row = new Grid { Margin = new Thickness(0, 2, 0, 0) };
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(50) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(60) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(50) });
+
+                var lbl = new TextBlock
+                {
+                    Text = $"节点 {idx + 1}",
+                    FontSize = 10,
+                    Foreground = new SolidColorBrush(Color.FromRgb(0x66, 0x66, 0x66)),
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                Grid.SetColumn(lbl, 0);
+                row.Children.Add(lbl);
+
+                var colorBox = new TextBox
+                {
+                    Text = stop.Color, FontSize = 10, Width = 56,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                colorBox.LostFocus += (_, _) =>
+                {
+                    try { stop.Color = colorBox.Text; rs.NotifyChanged(); }
+                    catch { colorBox.Text = stop.Color; }
+                };
+                Grid.SetColumn(colorBox, 1);
+                row.Children.Add(colorBox);
+
+                var valBox = new TextBox
+                {
+                    Text = stop.Value.ToString("F0"), FontSize = 10, Width = 44,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                valBox.LostFocus += (_, _) =>
+                {
+                    if (double.TryParse(valBox.Text, out var v)) { stop.Value = v; rs.NotifyChanged(); }
+                    else valBox.Text = stop.Value.ToString("F0");
+                };
+                Grid.SetColumn(valBox, 2);
+                row.Children.Add(valBox);
+
+                sp.Children.Add(row);
+            }
+
             SymbolEditorHost.Children.Add(sp);
         }
 
-        private void AddColorRow(Grid grid, ref int row, string label, string initialColor, Action<string> setter)
+        private void AddColorRow(Grid grid, ref int row, string label, string init, Action<string> setter)
         {
-            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(26) });
-            var lbl = new TextBlock
+            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(28) });
+            var tb = new TextBlock
             {
-                Text = label, FontSize = 10, Foreground = new SolidColorBrush(Color.FromRgb(0x44, 0x44, 0x44)),
+                Text = label, FontSize = 10,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x44, 0x44, 0x44)),
                 VerticalAlignment = VerticalAlignment.Center
             };
-            Grid.SetRow(lbl, row); Grid.SetColumn(lbl, 0);
-            grid.Children.Add(lbl);
+            Grid.SetRow(tb, row); Grid.SetColumn(tb, 0); grid.Children.Add(tb);
 
-            // 颜色预览块
             var swatch = new Border
             {
-                Width = 20, Height = 16, CornerRadius = new CornerRadius(2),
-                Margin = new Thickness(4, 0, 4, 0),
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(initialColor)!),
+                Width = 22, Height = 16, CornerRadius = new CornerRadius(2),
+                Margin = new Thickness(2, 0, 0, 0),
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(init)!),
                 BorderBrush = new SolidColorBrush(Color.FromRgb(0xC0, 0xC0, 0xC0)),
                 BorderThickness = new Thickness(1)
             };
-            Grid.SetRow(swatch, row); Grid.SetColumn(swatch, 1);
-            grid.Children.Add(swatch);
+            Grid.SetRow(swatch, row); Grid.SetColumn(swatch, 1); grid.Children.Add(swatch);
 
-            var tb = new TextBox
+            var box = new TextBox
             {
-                Text = initialColor, FontSize = 10, Width = 66,
+                Text = init, FontSize = 10, Width = 64,
                 VerticalAlignment = VerticalAlignment.Center
             };
-            tb.LostFocus += (_, _) =>
+            box.LostFocus += (_, _) =>
             {
-                try
-                {
-                    var c = (Color)ColorConverter.ConvertFromString(tb.Text);
-                    swatch.Background = new SolidColorBrush(c);
-                    setter(tb.Text);
-                }
-                catch { tb.Text = initialColor; }
+                try { var c = (Color)ColorConverter.ConvertFromString(box.Text); swatch.Background = new SolidColorBrush(c); setter(box.Text); }
+                catch { box.Text = init; }
             };
-            Grid.SetRow(tb, row); Grid.SetColumn(tb, 2);
-            grid.Children.Add(tb);
+            Grid.SetRow(box, row); Grid.SetColumn(box, 2); grid.Children.Add(box);
             row++;
         }
 
-        private void AddSliderRow(Grid grid, ref int row, string label, double initialValue,
-                                   double min, double max, Action<double> setter)
+        private void AddSliderRow(Grid grid, ref int row, string label, double init, double min, double max, Action<double> setter)
         {
-            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(26) });
-            var lbl = new TextBlock
+            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(28) });
+            var tb = new TextBlock
             {
-                Text = label, FontSize = 10, Foreground = new SolidColorBrush(Color.FromRgb(0x44, 0x44, 0x44)),
+                Text = label, FontSize = 10,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x44, 0x44, 0x44)),
                 VerticalAlignment = VerticalAlignment.Center
             };
-            Grid.SetRow(lbl, row); Grid.SetColumn(lbl, 0);
-            grid.Children.Add(lbl);
+            Grid.SetRow(tb, row); Grid.SetColumn(tb, 0); grid.Children.Add(tb);
 
-            var slider = new Slider
-            {
-                Minimum = min, Maximum = max, Value = initialValue,
-                SmallChange = 0.05, Width = 50, VerticalAlignment = VerticalAlignment.Center
-            };
-            var valText = new TextBlock
-            {
-                Text = initialValue.ToString("F2"), FontSize = 9,
-                Foreground = new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88)),
-                VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 0, 0)
-            };
-            slider.ValueChanged += (_, _) =>
-            {
-                valText.Text = slider.Value.ToString("F2");
-                setter(slider.Value);
-            };
-            var hStack = new StackPanel { Orientation = Orientation.Horizontal };
-            hStack.Children.Add(slider);
-            hStack.Children.Add(valText);
-            Grid.SetRow(hStack, row); Grid.SetColumn(hStack, 2);
-            grid.Children.Add(hStack);
+            var slider = new Slider { Minimum = min, Maximum = max, Value = init, SmallChange = 0.05, Width = 48, VerticalAlignment = VerticalAlignment.Center };
+            var vt = new TextBlock { Text = init.ToString("F2"), FontSize = 9, Foreground = Brushes.Gray, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 0, 0) };
+            slider.ValueChanged += (_, _) => { vt.Text = slider.Value.ToString("F2"); setter(slider.Value); };
+            var hs = new StackPanel { Orientation = Orientation.Horizontal };
+            hs.Children.Add(slider); hs.Children.Add(vt);
+            Grid.SetRow(hs, row); Grid.SetColumn(hs, 2); grid.Children.Add(hs);
             row++;
         }
 
-        private void AddNumRow(Grid grid, ref int row, string label, double initialValue, Action<double> setter)
+        private void AddNumRow(Grid grid, ref int row, string label, double init, Action<double> setter)
         {
-            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(26) });
-            var lbl = new TextBlock
+            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(28) });
+            var tb = new TextBlock
             {
-                Text = label, FontSize = 10, Foreground = new SolidColorBrush(Color.FromRgb(0x44, 0x44, 0x44)),
+                Text = label, FontSize = 10,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x44, 0x44, 0x44)),
                 VerticalAlignment = VerticalAlignment.Center
             };
-            Grid.SetRow(lbl, row); Grid.SetColumn(lbl, 0);
-            grid.Children.Add(lbl);
+            Grid.SetRow(tb, row); Grid.SetColumn(tb, 0); grid.Children.Add(tb);
 
-            var tb = new TextBox
-            {
-                Text = initialValue.ToString("F1"), FontSize = 10, Width = 50,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            tb.LostFocus += (_, _) =>
-            {
-                if (double.TryParse(tb.Text, out var v)) setter(v);
-                else tb.Text = initialValue.ToString("F1");
-            };
-            Grid.SetRow(tb, row); Grid.SetColumn(tb, 2);
-            grid.Children.Add(tb);
+            var box = new TextBox { Text = init.ToString("F1"), FontSize = 10, Width = 48, VerticalAlignment = VerticalAlignment.Center };
+            box.LostFocus += (_, _) => { if (double.TryParse(box.Text, out var v)) setter(v); else box.Text = init.ToString("F1"); };
+            Grid.SetRow(box, row); Grid.SetColumn(box, 2); grid.Children.Add(box);
             row++;
         }
 
