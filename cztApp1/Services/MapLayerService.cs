@@ -88,9 +88,9 @@ public class MapLayerService
             RasterSymbol = !isVector ? new RasterSymbol() : null
         };
 
-        // 每层一个默认符号子项
+        // 每层一个默认符号子项（只显示图形，不显示文字标签）
         var sym = isVector
-            ? new SymbolItem { Label = "符号", ColorHex = "#1565C0", Shape = "■" }
+            ? new SymbolItem { Label = "填充", ColorHex = "#1565C0", Shape = "■" }
             : new SymbolItem { Label = "色带", ColorHex = "#888888", Shape = "▦" };
         layer.Symbols.Add(sym);
 

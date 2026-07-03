@@ -18,10 +18,7 @@ public partial class MapView : UserControl
     private readonly Queue<string> _pendingScripts = new();
     private int _layerIdCounter;
 
-    /// <summary>鼠标移动时报告经纬度和比例尺</summary>
-    public event Action<string, string>? CoordChanged;
-
-    public MapView()
+        public MapView()
     {
         InitializeComponent();
         WebMap.CoreWebView2InitializationCompleted += OnCoreWebView2Ready;
@@ -60,20 +57,6 @@ public partial class MapView : UserControl
                     WebMap.CoreWebView2.ExecuteScriptAsync(script);
                 }
             });
-        }
-        else if (msg != null && msg.StartsWith("\"coord:"))
-        {
-            // Parse coord message: "coord:lng,lat,zoom,scale"
-            var parts = msg.Trim('"').Split(':')[1].Split(',');
-            if (parts.Length >= 4)
-            {
-                Dispatcher.Invoke(() =>
-                {
-                    var coord = $"{parts[0]}° E  {parts[1]}° N";
-                    var scale = $"比例 1:{parts[3]}";
-                    CoordChanged?.Invoke(coord, scale);
-                });
-            }
         }
     }
 
@@ -316,7 +299,8 @@ public partial class MapView : UserControl
 <link rel=""stylesheet"" href=""https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"" />
 <style>
   html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; }
-  #map { width:100%; height:100%; background:#E8E8E8; }
+  #map { width:100%; height:100%; background:#F5F5F5; }
+  .map-loaded { background:#FFFFFF !important; }
 </style>
 </head>
 <body>
@@ -331,11 +315,14 @@ var map = L.map('map', {
   attributionControl: false
 });
 
-// Base tile layer — OpenStreetMap
+// Base tile layer — OpenStreetMap (需要网络)
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
   opacity: 0.4
 }).addTo(map);
+
+// 地图加载完成标记（变白表示 Leaflet 初始化成功）
+document.getElementById('map').classList.add('map-loaded');
 
 // Layer registry
 var layers = {};
@@ -403,39 +390,6 @@ function clearAllLayers() {
 
 // Notify C# that the map is ready
 try { window.chrome.webview.postMessage('""map-ready""'); } catch(e) {}
-
-// 坐标显示和比例尺 → C#
-var coordThrottle = 0;
-function sendCoord(lng, lat, zoom, scale) {
-  var now = Date.now();
-  if (now - coordThrottle < 120) return;
-  coordThrottle = now;
-  try {
-    window.chrome.webview.postMessage(JSON.stringify('coord:' + lng + ',' + lat + ',' + zoom + ',' + scale));
-  } catch(e) {}
-}
-function calcScale(lat, zoom) {
-  return Math.round(156543.03392 * Math.cos(lat * Math.PI/180) / Math.pow(2, zoom));
-}
-map.on('mousemove', function(e) {
-  var lat = e.latlng.lat.toFixed(6);
-  var lng = e.latlng.lng.toFixed(6);
-  var scale = calcScale(e.latlng.lat, map.getZoom());
-  sendCoord(lng, lat, map.getZoom(), scale);
-});
-map.on('zoomend', function() {
-  var c = map.getCenter();
-  var scale = calcScale(c.lat, map.getZoom());
-  sendCoord(c.lng.toFixed(6), c.lat.toFixed(6), map.getZoom(), scale);
-});
-// 初始发送一次
-setTimeout(function() {
-  try {
-    var c = map.getCenter();
-    var scale = calcScale(c.lat, map.getZoom());
-    sendCoord(c.lng.toFixed(6), c.lat.toFixed(6), map.getZoom(), scale);
-  } catch(e) {}
-}, 500);
 </script>
 </body>
 </html>");

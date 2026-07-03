@@ -36,12 +36,6 @@ namespace cztApp1
             LayerTreeView.ItemsSource = _mapLayerService.Layers;
             SetupLayerTreeViewEvents();
 
-            // 地图工具条坐标更新 → 状态栏
-            MapViewControl.CoordChanged += (coord, scale) =>
-            {
-                StatusCoord.Text = coord;
-                StatusScale.Text = scale;
-            };
 
             // Hook up tree double-click
             DataTree.MouseDoubleClick += DataTree_MouseDoubleClick;
@@ -82,6 +76,26 @@ namespace cztApp1
         {
             if (sender is Border border)
                 border.Focus();
+        }
+
+        private void SymbolPanel_GotFocus(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is Border border)
+                border.Focus();
+        }
+
+        private void SymbolOptions_Click(object sender, RoutedEventArgs e)
+        {
+            var menu = new ContextMenu();
+            var close = new MenuItem { Header = "关闭符号系统" };
+            close.Click += (_, _) => SymbolPanelHost.Visibility = Visibility.Collapsed;
+            menu.Items.Add(close);
+            menu.IsOpen = true;
+        }
+
+        private void SymbolPanelClose_Click(object sender, RoutedEventArgs e)
+        {
+            SymbolPanelHost.Visibility = Visibility.Collapsed;
         }
 
         private void LayerOptions_Click(object sender, RoutedEventArgs e)
