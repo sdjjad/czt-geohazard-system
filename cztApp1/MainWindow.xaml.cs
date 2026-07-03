@@ -176,6 +176,17 @@ namespace cztApp1
         {
             GeoPanelHost.Visibility = Visibility.Collapsed;
             GeoSplitter.Visibility = Visibility.Collapsed;
+            RightPanelGrid.RowDefinitions[4].Height = GridLength.Auto;
+            // 恢复行高：如果符号面板还开着，图层占主要空间
+            if (SymbolPanelHost.Visibility == Visibility.Visible)
+            {
+                RightPanelGrid.RowDefinitions[0].Height = new GridLength(3, GridUnitType.Star);
+                RightPanelGrid.RowDefinitions[2].Height = new GridLength(1, GridUnitType.Star);
+            }
+            else
+            {
+                RightPanelGrid.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
+            }
         }
 
         private void ViewMenu_Click(object sender, RoutedEventArgs e)
@@ -259,8 +270,11 @@ namespace cztApp1
                             rs2.Visibility = Visibility.Visible;
                         SymbolPanelHost.Visibility = Visibility.Visible;
                         RightSplitter.Visibility = Visibility.Visible;
+                        // 图层:符号:地理处理 = 3:1:1
                         RightPanelGrid.RowDefinitions[0].Height = new GridLength(3, GridUnitType.Star);
                         RightPanelGrid.RowDefinitions[2].Height = new GridLength(1, GridUnitType.Star);
+                        RightPanelGrid.RowDefinitions[4].Height = GeoPanelHost.Visibility == Visibility.Visible
+                            ? new GridLength(1, GridUnitType.Star) : GridLength.Auto;
                         SymbolPanelTitle.Text = "符号系统";
                     }
                     break;
@@ -276,6 +290,11 @@ namespace cztApp1
                             rs3.Visibility = Visibility.Visible;
                         GeoPanelHost.Visibility = Visibility.Visible;
                         GeoSplitter.Visibility = Visibility.Visible;
+                        // 分配行高：图层/符号/地理处理按 3:1:1 分配
+                        RightPanelGrid.RowDefinitions[0].Height = new GridLength(3, GridUnitType.Star);
+                        RightPanelGrid.RowDefinitions[2].Height = SymbolPanelHost.Visibility == Visibility.Visible
+                            ? new GridLength(1, GridUnitType.Star) : GridLength.Auto;
+                        RightPanelGrid.RowDefinitions[4].Height = new GridLength(1, GridUnitType.Star);
                     }
                     break;
             }
@@ -299,8 +318,17 @@ namespace cztApp1
         {
             SymbolPanelHost.Visibility = Visibility.Collapsed;
             RightSplitter.Visibility = Visibility.Collapsed;
-            RightPanelGrid.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
             RightPanelGrid.RowDefinitions[2].Height = GridLength.Auto;
+            // 如果地理处理面板还开着，调整行高
+            if (GeoPanelHost.Visibility == Visibility.Visible)
+            {
+                RightPanelGrid.RowDefinitions[0].Height = new GridLength(3, GridUnitType.Star);
+                RightPanelGrid.RowDefinitions[4].Height = new GridLength(1, GridUnitType.Star);
+            }
+            else
+            {
+                RightPanelGrid.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
+            }
             AdjustRightColumn();
         }
 
