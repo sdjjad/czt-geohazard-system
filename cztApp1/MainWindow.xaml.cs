@@ -33,7 +33,8 @@ namespace cztApp1
             // Initialize map layer service
             _mapLayerService = new MapLayerService(MapViewControl);
             _mapLayerService.LayersChanged += OnLayersChanged;
-            LayerListBox.ItemsSource = _mapLayerService.Layers;
+            LayerTreeView.ItemsSource = _mapLayerService.Layers;
+            SetupLayerTreeViewEvents();
 
             // 地图工具条坐标更新 → 状态栏
             MapViewControl.CoordChanged += (coord, scale) =>
@@ -106,20 +107,306 @@ namespace cztApp1
             }
         }
 
-        private void RemoveLayerBtn_Click(object sender, RoutedEventArgs e)
+        #region 图层树事件
+
+        private TreeViewItem? _dragItem;
+        private MapLayer? _dragLayer;
+
+        private void SetupLayerTreeViewEvents()
         {
-            if (sender is Button btn && btn.Tag is MapLayer layer)
+            LayerTreeView.MouseDoubleClick += (_, e) =>
+            {
+                var item = FindParent<TreeViewItem>((DependencyObject)e.OriginalSource);
+                if (item?.DataContext is MapLayer layer)
+                    _ = _mapLayerService.ZoomToLayerAsync(layer);
+            };
+
+            // 右键菜单
+            LayerTreeView.PreviewMouseRightButtonDown += (_, e) =>
+            {
+                var item = FindParent<TreeViewItem>((DependencyObject)e.OriginalSource);
+                if (item?.DataContext is MapLayer layer)
+                {
+                    item.IsSelected = true;
+                    item.Focus();
+                    ShowLayerContextMenu(layer);
+                }
+            };
+
+            // 拖拽排序
+            LayerTreeView.PreviewMouseLeftButtonDown += (_, e) =>
+            {
+                _dragItem = FindParent<TreeViewItem>((DependencyObject)e.OriginalSource);
+                _dragLayer = _dragItem?.DataContext as MapLayer;
+            };
+            LayerTreeView.PreviewMouseMove += (_, e) =>
+            {
+                if (_dragLayer == null || e.LeftButton != MouseButtonState.Pressed) return;
+                DragDrop.DoDragDrop(_dragItem!, _dragLayer, DragDropEffects.Move);
+                _dragLayer = null; _dragItem = null;
+            };
+            LayerTreeView.Drop += (_, e) =>
+            {
+                if (!e.Data.GetDataPresent(typeof(MapLayer))) return;
+                var dragged = e.Data.GetData(typeof(MapLayer)) as MapLayer;
+                var targetItem = FindParent<TreeViewItem>((DependencyObject)e.OriginalSource);
+                var target = targetItem?.DataContext as MapLayer;
+                if (target != null && target != dragged)
+                {
+                    var idx = _mapLayerService.Layers.IndexOf(target);
+                    _mapLayerService.MoveLayerTo(dragged!, idx);
+                }
+            };
+        }
+
+        private void ShowLayerContextMenu(MapLayer layer)
+        {
+            var ctx = new ContextMenu();
+            var zoom = new MenuItem { Header = "缩放至图层" };
+            zoom.Click += async (_, _) => await _mapLayerService.ZoomToLayerAsync(layer);
+            var symb = new MenuItem { Header = "符号系统" };
+            symb.Click += (_, _) => ShowSymbolEditor(layer);
+            var up = new MenuItem { Header = "上移" };
+            up.Click += (_, _) => _mapLayerService.MoveLayerUp(layer);
+            var down = new MenuItem { Header = "下移" };
+            down.Click += (_, _) => _mapLayerService.MoveLayerDown(layer);
+            var remove = new MenuItem { Header = "移除图层" };
+            remove.Click += (_, _) =>
             {
                 _ = _mapLayerService.RemoveLayerAsync(layer);
                 RecordOperation($"移除图层: {layer.Name}");
+            };
+            ctx.Items.Add(zoom);
+            ctx.Items.Add(symb);
+            ctx.Items.Add(new Separator());
+            ctx.Items.Add(up);
+            ctx.Items.Add(down);
+            ctx.Items.Add(new Separator());
+            ctx.Items.Add(remove);
+            ctx.IsOpen = true;
+        }
+
+        private void SymbolItem_Click(object sender, MouseButtonEventArgs e)
+        {
+            var item = FindParent<TreeViewItem>((DependencyObject)e.OriginalSource);
+            if (item?.DataContext is SymbolItem)
+            {
+                // 找到所属的 MapLayer
+                var layerItem = FindParent<TreeViewItem>(item);
+                if (layerItem?.DataContext is MapLayer layer)
+                    ShowSymbolEditor(layer);
             }
         }
+
+        private void LayerCheckBox_Changed(object sender, RoutedEventArgs e)
+        {
+            if (sender is CheckBox cb && cb.DataContext is MapLayer layer)
+            {
+                _mapLayerService.SetLayerVisibility(layer, cb.IsChecked == true);
+            }
+        }
+
+        #endregion
 
         private static T? FindParent<T>(DependencyObject d) where T : DependencyObject
         {
             while (d != null) { if (d is T t) return t; d = VisualTreeHelper.GetParent(d); }
             return null;
         }
+
+        #region 符号系统面板
+
+        private MapLayer? _currentSymbolLayer;
+
+        private void ShowSymbolEditor(MapLayer layer)
+        {
+            _currentSymbolLayer = layer;
+            SymbolPanelHost.Visibility = Visibility.Visible;
+            SymbolEditorHost.Children.Clear();
+
+            var isVector = layer.Type == SpatialDataType.Vector;
+            SymbolPanelTitle.Text = $"符号系统 — {layer.Name}";
+
+            if (isVector && layer.VectorSymbol != null)
+            {
+                BuildVectorSymbolEditor(layer.VectorSymbol);
+            }
+            else if (!isVector && layer.RasterSymbol != null)
+            {
+                BuildRasterSymbolEditor(layer.RasterSymbol);
+            }
+        }
+
+        private void BuildVectorSymbolEditor(VectorSymbol vs)
+        {
+            var sp = new StackPanel();
+            var grid = new Grid { Margin = new Thickness(0, 2, 0, 4) };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(70) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(60) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            int row = 0;
+
+            // 填充颜色
+            AddColorRow(grid, ref row, "填充颜色", vs.FillColor, c => vs.FillColor = c);
+            // 填充透明度
+            AddSliderRow(grid, ref row, "填充透明度", vs.FillOpacity, 0, 1, v => vs.FillOpacity = v);
+            // 轮廓颜色
+            AddColorRow(grid, ref row, "轮廓颜色", vs.StrokeColor, c => vs.StrokeColor = c);
+            // 轮廓宽度
+            AddNumRow(grid, ref row, "轮廓宽度", vs.StrokeWidth, v => vs.StrokeWidth = v);
+            // 点大小
+            AddNumRow(grid, ref row, "点大小", vs.PointSize, v => vs.PointSize = v);
+
+            sp.Children.Add(grid);
+
+            // 预览
+            var preview = new Border
+            {
+                Width = 60, Height = 40, Margin = new Thickness(0, 6, 0, 0),
+                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(vs.StrokeColor)!),
+                BorderThickness = new Thickness(vs.StrokeWidth),
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(vs.FillColor)!) { Opacity = vs.FillOpacity }
+            };
+            vs.PropertyChanged += (_, _) =>
+            {
+                preview.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(vs.StrokeColor)!);
+                preview.BorderThickness = new Thickness(vs.StrokeWidth);
+                preview.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(vs.FillColor)!) { Opacity = vs.FillOpacity };
+            };
+            sp.Children.Add(preview);
+            SymbolEditorHost.Children.Add(sp);
+        }
+
+        private void BuildRasterSymbolEditor(RasterSymbol rs)
+        {
+            var sp = new StackPanel();
+            sp.Children.Add(new TextBlock
+            {
+                Text = "色带设置（暂用灰度默认）",
+                FontSize = 10, Foreground = new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88)),
+                Margin = new Thickness(0, 4, 0, 8)
+            });
+            // 简单预览：渐变条
+            var bar = new Border { Height = 16, CornerRadius = new CornerRadius(2), Margin = new Thickness(0, 0, 0, 4) };
+            var gradient = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 0) };
+            foreach (var stop in rs.Stops)
+            {
+                gradient.GradientStops.Add(new GradientStop(
+                    (Color)ColorConverter.ConvertFromString(stop.Color)!,
+                    stop.Value / 255.0));
+            }
+            bar.Background = gradient;
+            sp.Children.Add(bar);
+            SymbolEditorHost.Children.Add(sp);
+        }
+
+        private void AddColorRow(Grid grid, ref int row, string label, string initialColor, Action<string> setter)
+        {
+            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(26) });
+            var lbl = new TextBlock
+            {
+                Text = label, FontSize = 10, Foreground = new SolidColorBrush(Color.FromRgb(0x44, 0x44, 0x44)),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            Grid.SetRow(lbl, row); Grid.SetColumn(lbl, 0);
+            grid.Children.Add(lbl);
+
+            // 颜色预览块
+            var swatch = new Border
+            {
+                Width = 20, Height = 16, CornerRadius = new CornerRadius(2),
+                Margin = new Thickness(4, 0, 4, 0),
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(initialColor)!),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(0xC0, 0xC0, 0xC0)),
+                BorderThickness = new Thickness(1)
+            };
+            Grid.SetRow(swatch, row); Grid.SetColumn(swatch, 1);
+            grid.Children.Add(swatch);
+
+            var tb = new TextBox
+            {
+                Text = initialColor, FontSize = 10, Width = 66,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            tb.LostFocus += (_, _) =>
+            {
+                try
+                {
+                    var c = (Color)ColorConverter.ConvertFromString(tb.Text);
+                    swatch.Background = new SolidColorBrush(c);
+                    setter(tb.Text);
+                }
+                catch { tb.Text = initialColor; }
+            };
+            Grid.SetRow(tb, row); Grid.SetColumn(tb, 2);
+            grid.Children.Add(tb);
+            row++;
+        }
+
+        private void AddSliderRow(Grid grid, ref int row, string label, double initialValue,
+                                   double min, double max, Action<double> setter)
+        {
+            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(26) });
+            var lbl = new TextBlock
+            {
+                Text = label, FontSize = 10, Foreground = new SolidColorBrush(Color.FromRgb(0x44, 0x44, 0x44)),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            Grid.SetRow(lbl, row); Grid.SetColumn(lbl, 0);
+            grid.Children.Add(lbl);
+
+            var slider = new Slider
+            {
+                Minimum = min, Maximum = max, Value = initialValue,
+                SmallChange = 0.05, Width = 50, VerticalAlignment = VerticalAlignment.Center
+            };
+            var valText = new TextBlock
+            {
+                Text = initialValue.ToString("F2"), FontSize = 9,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88)),
+                VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 0, 0)
+            };
+            slider.ValueChanged += (_, _) =>
+            {
+                valText.Text = slider.Value.ToString("F2");
+                setter(slider.Value);
+            };
+            var hStack = new StackPanel { Orientation = Orientation.Horizontal };
+            hStack.Children.Add(slider);
+            hStack.Children.Add(valText);
+            Grid.SetRow(hStack, row); Grid.SetColumn(hStack, 2);
+            grid.Children.Add(hStack);
+            row++;
+        }
+
+        private void AddNumRow(Grid grid, ref int row, string label, double initialValue, Action<double> setter)
+        {
+            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(26) });
+            var lbl = new TextBlock
+            {
+                Text = label, FontSize = 10, Foreground = new SolidColorBrush(Color.FromRgb(0x44, 0x44, 0x44)),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            Grid.SetRow(lbl, row); Grid.SetColumn(lbl, 0);
+            grid.Children.Add(lbl);
+
+            var tb = new TextBox
+            {
+                Text = initialValue.ToString("F1"), FontSize = 10, Width = 50,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            tb.LostFocus += (_, _) =>
+            {
+                if (double.TryParse(tb.Text, out var v)) setter(v);
+                else tb.Text = initialValue.ToString("F1");
+            };
+            Grid.SetRow(tb, row); Grid.SetColumn(tb, 2);
+            grid.Children.Add(tb);
+            row++;
+        }
+
+        #endregion
 
         #endregion
 

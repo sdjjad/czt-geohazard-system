@@ -18,6 +18,9 @@ public class MapLayer
     public string FilePath { get; init; } = "";
     public SpatialDataType Type { get; init; }
     public bool IsVisible { get; set; } = true;
+    public ObservableCollection<SymbolItem> Symbols { get; set; } = new();
+    public VectorSymbol? VectorSymbol { get; set; }
+    public RasterSymbol? RasterSymbol { get; set; }
 }
 
 /// <summary>
@@ -74,13 +77,22 @@ public class MapLayerService
 
         if (string.IsNullOrEmpty(layerId)) return null;
 
+        var isVector = type == SpatialDataType.Vector;
         var layer = new MapLayer
         {
             LayerId = layerId,
             Name = name,
             FilePath = filePath,
-            Type = type
+            Type = type,
+            VectorSymbol = isVector ? new VectorSymbol() : null,
+            RasterSymbol = !isVector ? new RasterSymbol() : null
         };
+
+        // 每层一个默认符号子项
+        var sym = isVector
+            ? new SymbolItem { Label = "符号", ColorHex = "#1565C0", Shape = "■" }
+            : new SymbolItem { Label = "色带", ColorHex = "#888888", Shape = "▦" };
+        layer.Symbols.Add(sym);
 
         _layerLookup[layerId] = layer;
         Layers.Add(layer);
@@ -202,5 +214,46 @@ public class MapLayerService
             System.Diagnostics.Debug.WriteLine($"Shapefile read failed: {ex.Message}");
             return null;
         }
+    }
+
+    /// <summary>
+    /// 切换图层可见性
+    /// </summary>
+    public async void SetLayerVisibility(MapLayer layer, bool visible)
+    {
+        layer.IsVisible = visible;
+        if (visible)
+            await _mapView.RunScriptAsync($"toggleLayer('{layer.LayerId}', true);");
+        else
+            await _mapView.RunScriptAsync($"toggleLayer('{layer.LayerId}', false);");
+    }
+
+    /// <summary>
+    /// 上移图层
+    /// </summary>
+    public void MoveLayerUp(MapLayer layer)
+    {
+        var idx = Layers.IndexOf(layer);
+        if (idx > 0) MoveLayerTo(layer, idx - 1);
+    }
+
+    /// <summary>
+    /// 下移图层
+    /// </summary>
+    public void MoveLayerDown(MapLayer layer)
+    {
+        var idx = Layers.IndexOf(layer);
+        if (idx < Layers.Count - 1) MoveLayerTo(layer, idx + 1);
+    }
+
+    /// <summary>
+    /// 移动图层到指定位置
+    /// </summary>
+    public void MoveLayerTo(MapLayer layer, int targetIndex)
+    {
+        var oldIdx = Layers.IndexOf(layer);
+        if (oldIdx < 0 || targetIndex < 0 || targetIndex >= Layers.Count) return;
+        Layers.Move(oldIdx, targetIndex);
+        LayersChanged?.Invoke();
     }
 }

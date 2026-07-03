@@ -80,7 +80,7 @@ public partial class MapView : UserControl
     /// <summary>
     /// Ensure a script runs either immediately (if map is ready) or as soon as the map is ready.
     /// </summary>
-    private async Task RunScriptAsync(string script)
+    public async Task RunScriptAsync(string script)
     {
         if (_mapReady && WebMap.CoreWebView2 != null)
         {
