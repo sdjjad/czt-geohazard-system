@@ -348,7 +348,6 @@ namespace cztApp1
         private void ShowSymbolEditor(MapLayer layer)
         {
             _currentSymbolLayer = layer;
-            // 确保右侧列可见（可能之前被关闭了）
             if (MainContentGrid.ColumnDefinitions[4].Width.Value < 1)
             {
                 MainContentGrid.ColumnDefinitions[4].Width = new GridLength(220);
@@ -356,20 +355,28 @@ namespace cztApp1
             }
             SymbolPanelHost.Visibility = Visibility.Visible;
             RightSplitter.Visibility = Visibility.Visible;
-            // 切换行高：图层面板 3 份，符号面板 1 份，分隔条自适应
             RightPanelGrid.RowDefinitions[0].Height = new GridLength(3, GridUnitType.Star);
             RightPanelGrid.RowDefinitions[2].Height = new GridLength(1, GridUnitType.Star);
-            SymbolEditorHost.Children.Clear();
 
-            var isVector = layer.Type == SpatialDataType.Vector;
             SymbolPanelTitle.Text = $"符号系统 — {layer.Name}";
+            var isVector = layer.Type == SpatialDataType.Vector;
+            var geom = layer.Symbols.Count > 0 ? layer.Symbols[0].Geometry : SymbolGeometry.Polygon;
+
+            // 清除旧属性行（保留 RowDefinitions 和 ColumnDefinitions）
+            var grid = SymbolPropsGrid;
+            var toRemove = grid.Children.OfType<UIElement>()
+                .Where(c => Grid.GetRow(c) >= 0).ToList();
+            foreach (var c in toRemove) grid.Children.Remove(c);
+
+            // 取消旧订阅
+            if (_symbolPreviewHandler != null && _currentSymbolLayer?.VectorSymbol != null)
+                _currentSymbolLayer.VectorSymbol.PropertyChanged -= _symbolPreviewHandler;
 
             if (isVector && layer.VectorSymbol != null)
             {
-                var geom = layer.Symbols.Count > 0 ? layer.Symbols[0].Geometry : SymbolGeometry.Polygon;
                 BuildVectorSymbolEditor(layer, geom);
             }
-            else if (!isVector && layer.RasterSymbol != null)
+            else if (layer.RasterSymbol != null)
             {
                 BuildRasterSymbolEditor(layer, layer.RasterSymbol);
             }
@@ -377,9 +384,55 @@ namespace cztApp1
 
         private void OnSymbolEdited(MapLayer layer)
         {
-            // SymbolItem 已订阅 VectorSymbol.PropertyChanged，自动通知 WPF 刷新树预览
-            // 只需同步样式到 JS 地图
             _ = MapViewControl.UpdateLayerStyleAsync(layer);
+            if (layer.VectorSymbol != null && _currentSymbolLayer == layer)
+                UpdateSymbolPreview(layer.VectorSymbol, layer.Symbols[0].Geometry);
+        }
+
+        private void UpdateSymbolPreview(VectorSymbol vs, SymbolGeometry geom)
+        {
+            SymbolPreviewHost.Children.Clear();
+            FrameworkElement shape;
+            if (geom == SymbolGeometry.Line)
+            {
+                var c = (Color)ColorConverter.ConvertFromString(vs.StrokeColor);
+                shape = new System.Windows.Shapes.Line
+                {
+                    X1 = 6, Y1 = 24, X2 = 50, Y2 = 24,
+                    Stroke = new SolidColorBrush(c),
+                    StrokeThickness = Math.Max(2, vs.StrokeWidth),
+                    StrokeEndLineCap = PenLineCap.Round,
+                    StrokeStartLineCap = PenLineCap.Round
+                };
+            }
+            else if (geom == SymbolGeometry.Point)
+            {
+                var c = (Color)ColorConverter.ConvertFromString(vs.PointColor);
+                double sz = Math.Max(8, Math.Min(40, vs.PointSize * 2.5));
+                shape = new System.Windows.Shapes.Ellipse
+                {
+                    Width = sz, Height = sz,
+                    Fill = new SolidColorBrush(c),
+                    Stroke = new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99)),
+                    StrokeThickness = 1
+                };
+            }
+            else
+            {
+                var f = (Color)ColorConverter.ConvertFromString(vs.FillColor);
+                f.A = (byte)(vs.FillOpacity * 255);
+                var s = (Color)ColorConverter.ConvertFromString(vs.StrokeColor);
+                shape = new Border
+                {
+                    Width = 44, Height = 32,
+                    Background = new SolidColorBrush(f),
+                    BorderBrush = new SolidColorBrush(s),
+                    BorderThickness = new Thickness(Math.Max(1, vs.StrokeWidth))
+                };
+            }
+            shape.HorizontalAlignment = HorizontalAlignment.Center;
+            shape.VerticalAlignment = VerticalAlignment.Center;
+            SymbolPreviewHost.Children.Add(shape);
         }
 
         // ========== 矢量符号编辑器 ==========
@@ -387,13 +440,13 @@ namespace cztApp1
         private void BuildVectorSymbolEditor(MapLayer layer, SymbolGeometry geom)
         {
             var vs = layer.VectorSymbol!;
-            var sp = new StackPanel();
-            var grid = new Grid { Margin = new Thickness(0, 2, 0, 4) };
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(28) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             int row = 0;
+            var grid = SymbolPropsGrid;
             Action onChanged = () => OnSymbolEdited(layer);
+
+            // 订阅 PropertyChanged 实时更新预览
+            _symbolPreviewHandler = (_, _) => UpdateSymbolPreview(vs, geom);
+            vs.PropertyChanged += _symbolPreviewHandler;
 
             if (geom == SymbolGeometry.Polygon)
             {
@@ -413,66 +466,8 @@ namespace cztApp1
                 AddNumRow(grid, ref row, "大小", vs.PointSize, v => { vs.PointSize = v; onChanged(); });
             }
 
-            sp.Children.Add(grid);
-            // 实时预览（取消旧订阅，防止内存泄漏）
-            if (_symbolPreviewHandler != null)
-                vs.PropertyChanged -= _symbolPreviewHandler;
-            var preview = BuildSymbolPreview(vs, geom);
-            _symbolPreviewHandler = (_, _) => UpdatePreview(sp, preview, vs, geom);
-            vs.PropertyChanged += _symbolPreviewHandler;
-            sp.Children.Add(preview);
-            SymbolEditorHost.Children.Add(sp);
-        }
-
-        private void UpdatePreview(StackPanel sp, FrameworkElement old, VectorSymbol vs, SymbolGeometry geom)
-        {
-            var idx = sp.Children.IndexOf(old);
-            if (idx >= 0) sp.Children.RemoveAt(idx);
-            var n = BuildSymbolPreview(vs, geom);
-            if (idx >= 0) sp.Children.Insert(idx, n);
-        }
-
-        private static FrameworkElement BuildSymbolPreview(VectorSymbol vs, SymbolGeometry geom)
-        {
-            FrameworkElement el;
-            if (geom == SymbolGeometry.Line)
-            {
-                var c = (Color)ColorConverter.ConvertFromString(vs.StrokeColor);
-                el = new System.Windows.Shapes.Line
-                {
-                    X1 = 4, Y1 = 12, X2 = 56, Y2 = 12,
-                    Stroke = new SolidColorBrush(c),
-                    StrokeThickness = Math.Max(1.5, vs.StrokeWidth),
-                    StrokeEndLineCap = PenLineCap.Round,
-                    StrokeStartLineCap = PenLineCap.Round,
-                    Width = 60, Height = 24
-                };
-            }
-            else if (geom == SymbolGeometry.Point)
-            {
-                var c = (Color)ColorConverter.ConvertFromString(vs.PointColor);
-                el = new System.Windows.Shapes.Ellipse
-                {
-                    Width = Math.Min(24, vs.PointSize * 2), Height = Math.Min(24, vs.PointSize * 2),
-                    Fill = new SolidColorBrush(c),
-                    Stroke = new SolidColorBrush(Colors.Gray), StrokeThickness = 1
-                };
-            }
-            else
-            {
-                var f = (Color)ColorConverter.ConvertFromString(vs.FillColor);
-                f.A = (byte)(vs.FillOpacity * 255);
-                var s = (Color)ColorConverter.ConvertFromString(vs.StrokeColor);
-                el = new Border
-                {
-                    Width = 60, Height = 36,
-                    Background = new SolidColorBrush(f),
-                    BorderBrush = new SolidColorBrush(s),
-                    BorderThickness = new Thickness(Math.Max(1, vs.StrokeWidth))
-                };
-            }
-            el.Margin = new Thickness(0, 6, 0, 0);
-            return el;
+            // 初始预览
+            UpdateSymbolPreview(vs, geom);
         }
 
         // ========== 栅格符号编辑器 ==========
