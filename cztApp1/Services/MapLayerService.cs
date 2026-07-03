@@ -88,11 +88,47 @@ public class MapLayerService
             RasterSymbol = !isVector ? new RasterSymbol() : null
         };
 
-        // 每层一个默认符号子项（只显示图形，不显示文字标签）
-        var sym = isVector
-            ? new SymbolItem { Label = "填充", ColorHex = "#1565C0", Shape = "■" }
-            : new SymbolItem { Label = "色带", ColorHex = "#888888", Shape = "▦" };
-        layer.Symbols.Add(sym);
+        // 每层一个默认符号子项，根据几何类型显示真实符号预览
+        if (isVector && layer.VectorSymbol != null)
+        {
+            var vs = layer.VectorSymbol;
+            var geom = DetectGeometryType(filePath);
+            layer.Symbols.Add(new SymbolItem
+            {
+                Label = "符号",
+                Geometry = geom,
+                FillColor = vs.FillColor,
+                FillOpacity = vs.FillOpacity,
+                StrokeColor = vs.StrokeColor,
+                StrokeWidth = vs.StrokeWidth,
+                PointColor = vs.PointColor,
+                PointSize = vs.PointSize
+            });
+            // 根据几何类型调整默认符号
+            switch (geom)
+            {
+                case SymbolGeometry.Line:
+                    vs.FillColor = "#00000000"; // 透明填充
+                    vs.StrokeColor = "#1565C0";
+                    vs.StrokeWidth = 2;
+                    break;
+                case SymbolGeometry.Point:
+                    vs.PointColor = "#E81123";
+                    vs.PointSize = 8;
+                    break;
+            }
+        }
+        else if (layer.RasterSymbol != null)
+        {
+            var rs = layer.RasterSymbol;
+            layer.Symbols.Add(new SymbolItem
+            {
+                Label = "色带",
+                Geometry = SymbolGeometry.Raster,
+                RampFrom = rs.Stops.Count > 0 ? rs.Stops[0].Color : "#000000",
+                RampTo = rs.Stops.Count > 1 ? rs.Stops[^1].Color : "#FFFFFF"
+            });
+        }
 
         _layerLookup[layerId] = layer;
         Layers.Add(layer);
@@ -244,6 +280,30 @@ public class MapLayerService
     {
         var idx = Layers.IndexOf(layer);
         if (idx < Layers.Count - 1) MoveLayerTo(layer, idx + 1);
+    }
+
+    /// <summary>
+    /// 检测 shapefile 几何类型（面/线/点）
+    /// </summary>
+    private static SymbolGeometry DetectGeometryType(string filePath)
+    {
+        try
+        {
+            if (!File.Exists(filePath)) return SymbolGeometry.Polygon;
+            var factory = new GeometryFactory();
+            using var reader = new ShapefileDataReader(filePath, factory);
+            var shapeType = (int)reader.ShapeHeader.ShapeType;
+            return shapeType switch
+            {
+                1 or 11 or 21 => SymbolGeometry.Point,
+                3 or 13 or 23 => SymbolGeometry.Line,
+                _ => SymbolGeometry.Polygon
+            };
+        }
+        catch
+        {
+            return SymbolGeometry.Polygon;
+        }
     }
 
     /// <summary>

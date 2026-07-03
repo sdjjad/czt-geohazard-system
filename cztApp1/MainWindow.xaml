@@ -776,11 +776,22 @@
                                 <HierarchicalDataTemplate ItemsSource="{Binding Symbols}">
                                     <HierarchicalDataTemplate.ItemTemplate>
                                         <DataTemplate>
-                                            <TextBlock Cursor="Hand"
-                                                       MouseLeftButtonDown="SymbolItem_Click"
-                                                       Text="{Binding Shape}" FontSize="11"
-                                                       Foreground="{Binding ColorHex, Converter={x:Static views:HexToBrushConverter.Instance}}"
-                                                       Width="16" HorizontalAlignment="Center"/>
+                                            <Grid Cursor="Hand" Margin="4,2,0,2"
+                                                  MouseLeftButtonDown="SymbolItem_Click">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="36"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <ContentControl Grid.Column="0"
+                                                                Content="{Binding Converter={x:Static views:SymbolPreviewConverter.Instance}}"
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding Label}"
+                                                           Foreground="#888" FontSize="10"
+                                                           VerticalAlignment="Center"
+                                                           Margin="4,0,0,0"/>
+                                            </Grid>
                                         </DataTemplate>
                                     </HierarchicalDataTemplate.ItemTemplate>
                                     <Grid Background="Transparent">
