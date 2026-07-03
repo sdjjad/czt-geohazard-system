@@ -317,27 +317,10 @@ public partial class MapView : UserControl
 <style>
   html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; }
   #map { width:100%; height:100%; background:#E8E8E8; }
-  .layer-control {
-    position:absolute; top:10px; right:10px; background:white;
-    border-radius:4px; box-shadow:0 1px 5px rgba(0,0,0,0.3);
-    padding:8px 12px; font-family:'Microsoft YaHei UI',sans-serif;
-    font-size:12px; max-height:60%; overflow-y:auto; min-width:160px; z-index:1000;
-  }
-  .layer-control h4 { margin:0 0 6px; font-size:13px; color:#333; }
-  .layer-item { display:flex; align-items:center; margin:4px 0; gap:6px; }
-  .layer-item input[type=""checkbox""] { cursor:pointer; }
-  .layer-item label { flex:1; cursor:pointer; font-size:11px; color:#444; }
-  .layer-item .remove-btn { cursor:pointer; color:#999; font-size:14px; border:none; background:none; padding:0 2px; }
-  .layer-item .remove-btn:hover { color:#E81123; }
-  .no-layers { color:#999; font-size:11px; font-style:italic; }
 </style>
 </head>
 <body>
 <div id=""map""></div>
-<div class=""layer-control"" id=""layerControl"">
-  <h4>图层列表</h4>
-  <div id=""layerList""><span class=""no-layers"">暂无图层</span></div>
-</div>
 
 <script src=""https://unpkg.com/leaflet@1.9.4/dist/leaflet.js""></script>
 <script>
@@ -357,25 +340,6 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 // Layer registry
 var layers = {};
 
-function updateLayerControl() {
-  var list = document.getElementById('layerList');
-  var keys = Object.keys(layers);
-  if (keys.length === 0) {
-    list.innerHTML = '<span class=""no-layers"">暂无图层</span>';
-    return;
-  }
-  var html = '';
-  keys.forEach(function(id) {
-    var l = layers[id];
-    html += '<div class=""layer-item"">' +
-      '<input type=""checkbox"" checked onchange=""toggleLayer(\'' + id + '\', this.checked)"">' +
-      '<label title=""' + l.name + '"">' + l.name + '</label>' +
-      '<button class=""remove-btn"" onclick=""removeLayer(\'' + id + '\')"" title=""移除图层"">✕</button>' +
-      '</div>';
-  });
-  list.innerHTML = html;
-}
-
 function addVectorLayer(id, name, geojsonStr) {
   // Remove existing layer with same ID
   if (layers[id]) { map.removeLayer(layers[id].leafletLayer); }
@@ -391,7 +355,7 @@ function addVectorLayer(id, name, geojsonStr) {
   }).addTo(map);
 
   layers[id] = { name: name, leafletLayer: lyr, type: 'vector' };
-  updateLayerControl();
+  
 }
 
 function addRasterLayer(id, name, base64data, south, west, north, east) {
@@ -402,7 +366,7 @@ function addRasterLayer(id, name, base64data, south, west, north, east) {
   var lyr = L.imageOverlay(imgUrl, bounds, { opacity: 0.8 }).addTo(map);
 
   layers[id] = { name: name, leafletLayer: lyr, type: 'raster' };
-  updateLayerControl();
+  
 }
 
 function removeLayer(id) {
@@ -410,7 +374,7 @@ function removeLayer(id) {
     map.removeLayer(layers[id].leafletLayer);
     delete layers[id];
   }
-  updateLayerControl();
+  
 }
 
 function zoomToLayer(id) {
@@ -434,7 +398,7 @@ function clearAllLayers() {
     map.removeLayer(layers[id].leafletLayer);
   });
   layers = {};
-  updateLayerControl();
+  
 }
 
 // Notify C# that the map is ready

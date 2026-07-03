@@ -43,7 +43,7 @@ public static class SpatialDataHelper
     private static readonly HashSet<string> ShapefileCompanions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".dbf", ".shx", ".prj", ".cpg", ".sbn", ".sbx",
-        ".shp.xml", ".qix", ".fix", ".fbn", ".fbx", ".ain", ".aih", ".atx"
+        ".shp.xml", ".sidx", ".qix", ".fix", ".fbn", ".fbx", ".ain", ".aih", ".atx"
     };
 
     /// <summary>
