@@ -397,12 +397,28 @@ try { window.chrome.webview.postMessage('""map-ready""'); } catch(e) {}
     }
 
     /// <summary>
-    /// 读取 Resources 目录中的文件内容
+    /// 读取 Resources 目录中的文件内容（多层次查找）
     /// </summary>
     private static string ReadResource(string filename)
     {
-        var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", filename);
+        // 1. 输出目录 (bin/Debug/net10.0-windows/Resources/)
+        var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+        var path = Path.Combine(baseDir, "Resources", filename);
         if (File.Exists(path)) return File.ReadAllText(path);
+
+        // 2. 项目根目录 (开发时 dotnet run 的工作目录)
+        var cwd = Directory.GetCurrentDirectory();
+        path = Path.Combine(cwd, "Resources", filename);
+        if (File.Exists(path)) return File.ReadAllText(path);
+
+        // 3. 往上找两级 (bin → 项目根)
+        var parent = Directory.GetParent(baseDir)?.Parent?.FullName;
+        if (parent != null)
+        {
+            path = Path.Combine(parent, "Resources", filename);
+            if (File.Exists(path)) return File.ReadAllText(path);
+        }
+
         return "";
     }
 
