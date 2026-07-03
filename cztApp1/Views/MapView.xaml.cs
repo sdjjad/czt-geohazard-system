@@ -324,13 +324,6 @@ var map = L.map('map', {
 
 // 纯白背景，数据直接渲染（跟 ArcGIS Pro 一样）
 
-// 默认显示 CZT 区域边界框（确认地图已加载）
-var cztBounds = L.rectangle([[27.4, 112.4], [28.6, 113.6]], {
-  color: '#1565C0', weight: 2, fillColor: '#64B5F6', fillOpacity: 0.08,
-  dashArray: '6, 4', interactive: false
-}).addTo(map);
-map.fitBounds(cztBounds.getBounds());
-
 // Layer registry
 var layers = {};
 
