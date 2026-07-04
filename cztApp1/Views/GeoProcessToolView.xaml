@@ -51,35 +51,29 @@
             <TextBlock Text="面图层中用于区分分类名称的属性字段" FontSize="8" Foreground="#999" Margin="0,0,0,2"/>
             <ComboBox Grid.Row="3" x:Name="ClassFieldCombo" Height="26" FontSize="10" Margin="0,0,0,6"/>
 
-            <!-- 4. 分级分区 -->
+            <!-- 4. 分级分区（下拉菜单式，不挤字） -->
             <TextBlock Grid.Row="4" Text="📊 分级分区" FontSize="11" FontWeight="SemiBold"
                        Foreground="#333333" Margin="0,6,0,2"/>
-            <TextBlock Text="对连续数值字段自动重分类" FontSize="8" Foreground="#999" Margin="0,0,0,4"/>
-            <Grid Grid.Row="4" Margin="0,0,0,4">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <Grid Grid.Row="0" Margin="0,0,0,4">
+            <StackPanel Grid.Row="4" Margin="0,0,0,4">
+                <Grid Margin="0,0,0,4">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="42"/><ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="方法:" FontSize="10" Foreground="#555" VerticalAlignment="Center"/>
-                    <ComboBox Grid.Column="1" x:Name="ClassMethod" Height="24" FontSize="10"
+                    <ComboBox x:Name="ClassMethod" Height="26" FontSize="10"
                               SelectionChanged="ClassMethod_SelectionChanged">
-                        <ComboBoxItem>-- 不分类（按原值） --</ComboBoxItem>
-                        <ComboBoxItem ToolTip="自然间断点分级法 (Jenks)">自然间断点分级法</ComboBoxItem>
-                        <ComboBoxItem>等间距</ComboBoxItem>
-                        <ComboBoxItem IsSelected="True">分位数</ComboBoxItem>
-                        <ComboBoxItem>标准差</ComboBoxItem>
+                        <ComboBoxItem IsSelected="True">不分类（按字段原值分组）</ComboBoxItem>
+                        <ComboBoxItem>自然间断点分级法</ComboBoxItem>
+                        <ComboBoxItem>等间距分级</ComboBoxItem>
+                        <ComboBoxItem>分位数分级</ComboBoxItem>
+                        <ComboBoxItem>标准差分级</ComboBoxItem>
                     </ComboBox>
                 </Grid>
-                <Grid Grid.Row="1">
+                <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="42"/><ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="分类数:" FontSize="10" Foreground="#555" VerticalAlignment="Center"/>
-                    <ComboBox Grid.Column="1" x:Name="ClassCountCombo" Height="24" FontSize="10">
+                    <TextBlock Text="分类数:" FontSize="10" Foreground="#555" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <ComboBox Grid.Column="1" x:Name="ClassCountCombo" Height="24" FontSize="10" Width="70" HorizontalAlignment="Left">
                         <ComboBoxItem>3</ComboBoxItem>
                         <ComboBoxItem>4</ComboBoxItem>
                         <ComboBoxItem IsSelected="True">5</ComboBoxItem>
@@ -87,7 +81,7 @@
                         <ComboBoxItem>10</ComboBoxItem>
                     </ComboBox>
                 </Grid>
-            </Grid>
+            </StackPanel>
 
             <!-- 5. 分析方法 -->
             <TextBlock Grid.Row="5" Text="🔬 分析方法" FontSize="11" FontWeight="SemiBold"

@@ -56,6 +56,9 @@ namespace cztApp1
             LayerTreeView.ItemsSource = _mapLayerService.Layers;
             SetupLayerTreeViewEvents();
 
+            // 默认只显示数据面板和图层面板，隐藏符号和地理处理面板
+            SymbolPanelAnchor.Hide();
+            GeoPanelAnchor.Hide();
 
 
             // Hook up tree double-click
@@ -365,6 +368,13 @@ namespace cztApp1
                 ShowSymbolEditor(layer);
         }
 
+        private void LayerName_Click(object sender, MouseButtonEventArgs e)
+        {
+            // 点击图层名称整行 → 打开符号系统
+            if (sender is FrameworkElement fe && fe.DataContext is MapLayer layer)
+                ShowSymbolEditor(layer);
+        }
+
         private void LayerCheckBox_Changed(object sender, RoutedEventArgs e)
         {
             if (sender is CheckBox cb && cb.DataContext is MapLayer layer)
@@ -407,6 +417,8 @@ namespace cztApp1
         {
             _currentSymbolLayer = layer;
             SymbolPanelAnchor.Show();
+            SymbolPanelAnchor.IsActive = true;
+            SymbolPanelAnchor.IsSelected = true;
             SymbolPanelAnchor.Title = $"符号系统 — {layer.Name}";
             var isVector = layer.Type == SpatialDataType.Vector;
             var geom = layer.Symbols.Count > 0 ? layer.Symbols[0].Geometry : SymbolGeometry.Polygon;

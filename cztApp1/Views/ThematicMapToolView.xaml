@@ -6,138 +6,65 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <Grid Margin="4,2">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/><!-- 0: 制图图层 -->
+                <RowDefinition Height="Auto"/><!-- 1: LayerCombo -->
+                <RowDefinition Height="Auto"/><!-- 2: 图名 -->
+                <RowDefinition Height="Auto"/><!-- 3: MapTitle -->
+                <RowDefinition Height="Auto"/><!-- 4: 预览图框 -->
+                <RowDefinition Height="*"/>   <!-- 5: 画布 -->
+                <RowDefinition Height="Auto"/><!-- 6: 输出 -->
+                <RowDefinition Height="Auto"/><!-- 7: 按钮 -->
+                <RowDefinition Height="Auto"/><!-- 8: 状态 -->
             </Grid.RowDefinitions>
 
-            <!-- ====== 图层选择 ====== -->
+            <!-- 制图图层 -->
             <TextBlock Grid.Row="0" Text="🗺 制图图层" FontSize="11" FontWeight="SemiBold"
-                       Foreground="#333333" Margin="0,4,0,2"/>
+                       Foreground="#333" Margin="0,4,0,2"/>
             <ComboBox Grid.Row="1" x:Name="LayerCombo" Height="24" FontSize="10" Margin="0,0,0,4"
                       SelectionChanged="LayerCombo_Changed"/>
 
-            <!-- ====== 图名 ====== -->
+            <!-- 图名 -->
             <TextBlock Grid.Row="2" Text="📝 图名" FontSize="11" FontWeight="SemiBold"
-                       Foreground="#333333" Margin="0,4,0,2"/>
+                       Foreground="#333" Margin="0,4,0,2"/>
             <TextBox Grid.Row="3" x:Name="MapTitle" Height="26" FontSize="10"
-                     Text="长株潭地质灾害专题图" Margin="0,0,0,2"/>
+                     Text="长株潭地质灾害专题图" Margin="0,0,0,4"/>
 
-            <!-- 副标题 -->
-            <TextBlock Grid.Row="4" Text="副标题" FontSize="10" Foreground="#555555" Margin="0,4,0,2"/>
-            <TextBox Grid.Row="5" x:Name="MapSubtitle" Height="26" FontSize="10"
-                     Text="土壤植被指标分析" Margin="0,0,0,2"/>
+            <!-- 预览图框 -->
+            <Border Grid.Row="4" x:Name="PreviewBorder" Background="White"
+                    BorderBrush="#C0C0C0" BorderThickness="1" CornerRadius="3"
+                    Height="200" Margin="0,0,0,6">
+                <Canvas x:Name="PreviewCanvas" Background="White"
+                        MouseLeftButtonDown="Canvas_MouseDown"
+                        MouseMove="Canvas_MouseMove"
+                        MouseLeftButtonUp="Canvas_MouseUp"/>
+            </Border>
 
-            <!-- ====== 图幅尺寸 ====== -->
-            <TextBlock Grid.Row="6" Text="📐 图幅尺寸" FontSize="11" FontWeight="SemiBold"
-                       Foreground="#333333" Margin="0,6,0,2"/>
-            <Grid Grid.Row="7" Margin="0,0,0,4">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="宽:" FontSize="10" Foreground="#666" VerticalAlignment="Center"/>
-                <ComboBox Grid.Column="1" x:Name="ImageWidth" Height="24" FontSize="10" Margin="4,0,8,0">
-                    <ComboBoxItem>800</ComboBoxItem>
-                    <ComboBoxItem>1024</ComboBoxItem>
-                    <ComboBoxItem IsSelected="True">1200</ComboBoxItem>
-                    <ComboBoxItem>1600</ComboBoxItem>
-                    <ComboBoxItem>1920</ComboBoxItem>
-                </ComboBox>
-                <TextBlock Grid.Column="2" Text="高:" FontSize="10" Foreground="#666" VerticalAlignment="Center"/>
-                <ComboBox Grid.Column="3" x:Name="ImageHeight" Height="24" FontSize="10" Margin="4,0,0,0">
-                    <ComboBoxItem>600</ComboBoxItem>
-                    <ComboBoxItem>768</ComboBoxItem>
-                    <ComboBoxItem IsSelected="True">900</ComboBoxItem>
-                    <ComboBoxItem>1080</ComboBoxItem>
-                    <ComboBoxItem>1200</ComboBoxItem>
-                </ComboBox>
-            </Grid>
-
-            <!-- ====== 制图元素 ====== -->
-            <TextBlock Grid.Row="8" Text="🎨 制图元素" FontSize="11" FontWeight="SemiBold"
-                       Foreground="#333333" Margin="0,6,0,2"/>
-
-            <StackPanel Grid.Row="9" Margin="0,2,0,4">
-                <CheckBox x:Name="IncludeLegend" Content="图例（右侧面板，含CF分级配色）"
-                          IsChecked="True" FontSize="10" Foreground="#333" Margin="0,2"/>
-                <CheckBox x:Name="IncludeScaleBar" Content="比例尺（底部，含刻度条+比例文字）"
-                          IsChecked="True" FontSize="10" Foreground="#333" Margin="0,2"/>
-                <CheckBox x:Name="IncludeNorthArrow" Content="指北针（地图区右上角，N标记）"
-                          IsChecked="True" FontSize="10" Foreground="#333" Margin="0,2"/>
-                <CheckBox x:Name="IncludeGrid" Content="坐标格网（经纬度网格）"
-                          IsChecked="False" FontSize="10" Foreground="#333" Margin="0,2"/>
-            </StackPanel>
-
-            <!-- ====== 输出设置 ====== -->
-            <TextBlock Grid.Row="10" Text="💾 输出设置" FontSize="11" FontWeight="SemiBold"
-                       Foreground="#333333" Margin="0,6,0,2"/>
-            <Grid Grid.Row="11" Margin="0,0,0,4">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+            <!-- 输出目录 -->
+            <Grid Grid.Row="6" Margin="0,0,0,4">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                 <TextBox Grid.Column="0" x:Name="OutputFolder" Height="26" FontSize="10"
                          Text="D:\GeoHazardOutput\Maps" VerticalAlignment="Center"/>
                 <Button Grid.Column="1" Content="📁" Width="26" Height="26" FontSize="12"
                         Click="BrowseFolder_Click" Background="#E8E8E8" BorderThickness="0"
-                        Cursor="Hand" Margin="3,0,0,0" ToolTip="选择输出目录"/>
+                        Cursor="Hand" Margin="3,0,0,0"/>
             </Grid>
 
-            <!-- ====== 操作按钮 ====== -->
-            <StackPanel Grid.Row="12" Orientation="Horizontal" Margin="0,6,0,6">
-                <Button x:Name="BtnGenerateMap" Content="🗺 生成专题图" Width="120" Height="32" FontSize="11"
+            <!-- 操作按钮 -->
+            <StackPanel Grid.Row="7" Orientation="Horizontal" Margin="0,2,0,6">
+                <Button Content="🗺 生成专题图" Width="110" Height="28" FontSize="10"
                         Background="#1565C0" Foreground="White" BorderThickness="0"
-                        Cursor="Hand" Click="GenerateMap_Click" FontWeight="SemiBold">
-                    <Button.Template>
-                        <ControlTemplate TargetType="Button">
-                            <Border Background="{TemplateBinding Background}"
-                                    CornerRadius="4" Padding="8,4">
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                        </ControlTemplate>
-                    </Button.Template>
-                </Button>
-                <Button x:Name="BtnExportLegend" Content="📋 仅导出图例" Width="110" Height="32" FontSize="11"
-                        Background="#43A047" Foreground="White" BorderThickness="0"
-                        Cursor="Hand" Click="ExportLegend_Click" Margin="6,0,0,0">
-                    <Button.Template>
-                        <ControlTemplate TargetType="Button">
-                            <Border Background="{TemplateBinding Background}"
-                                    CornerRadius="4" Padding="8,4">
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                        </ControlTemplate>
-                    </Button.Template>
-                </Button>
-                <Button Content="📂 打开目录" Width="100" Height="32" FontSize="11"
+                        Cursor="Hand" Click="GenerateMap_Click"/>
+                <Button Content="🗑 清除画布" Width="80" Height="28" FontSize="10"
                         Background="#F0F0F0" Foreground="#333" BorderThickness="0"
-                        Cursor="Hand" Click="OpenFolder_Click" Margin="6,0,0,0">
-                    <Button.Template>
-                        <ControlTemplate TargetType="Button">
-                            <Border Background="{TemplateBinding Background}"
-                                    CornerRadius="4" Padding="8,4">
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                        </ControlTemplate>
-                    </Button.Template>
-                </Button>
+                        Cursor="Hand" Click="ClearCanvas_Click" Margin="6,0,0,0"/>
+                <Button Content="📂 打开目录" Width="80" Height="28" FontSize="10"
+                        Background="#F0F0F0" Foreground="#333" BorderThickness="0"
+                        Cursor="Hand" Click="OpenFolder_Click" Margin="6,0,0,0"/>
             </StackPanel>
 
-            <!-- ====== 进度/状态 ====== -->
-            <Border Grid.Row="13" x:Name="StatusBorder" Background="#F8F8F8"
-                    CornerRadius="3" Padding="6,4" Margin="0,2,0,4"
+            <!-- 状态 -->
+            <Border Grid.Row="8" x:Name="StatusBorder" Background="#F8F8F8"
+                    CornerRadius="3" Padding="6,4" Margin="0,2,0,0"
                     Visibility="Collapsed">
                 <TextBlock x:Name="StatusText" Text="" FontSize="10"
                            Foreground="#1565C0" TextWrapping="Wrap"/>

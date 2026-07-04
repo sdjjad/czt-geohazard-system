@@ -2,8 +2,12 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Shapes;
 using cztApp1.Services;
 using Microsoft.Win32;
+using IoPath = System.IO.Path;
 
 namespace cztApp1.Views
 {
@@ -12,25 +16,37 @@ namespace cztApp1.Views
         private ThematicMapService? _service;
         private MapLayerService? _layerService;
         private string? _lastOutputPath;
+        private bool _isDrawing;
+        private Point _lastPoint;
+        private Polyline? _currentLine;
 
         public ThematicMapToolView()
         {
             InitializeComponent();
         }
 
-        /// <summary>
-        /// 设置地图服务引用
-        /// </summary>
         public void SetMapView(MapView mapView)
         {
             _service = new ThematicMapService(mapView);
         }
 
-        /// <summary>设置图层服务引用</summary>
         public void SetLayerService(MapLayerService layerService)
         {
             _layerService = layerService;
             RefreshLayerList();
+        }
+
+        public void LoadTool(string toolName)
+        {
+            _lastOutputPath = null;
+            StatusBorder.Visibility = Visibility.Collapsed;
+
+            if (toolName == "StatChart")
+                MapTitle.Text = "地质灾害统计图";
+            else if (toolName == "StatTable")
+                MapTitle.Text = "地质灾害统计表";
+            else
+                MapTitle.Text = "长株潭地质灾害专题图";
         }
 
         private void RefreshLayerList()
@@ -39,7 +55,7 @@ namespace cztApp1.Views
             LayerCombo.Items.Add("-- 选择图层 --");
             if (_layerService == null) { LayerCombo.SelectedIndex = 0; return; }
             foreach (var l in _layerService.Layers)
-                LayerCombo.Items.Add($"{l.Name} [{Path.GetFileName(l.FilePath)}]");
+                LayerCombo.Items.Add($"{l.Name} [{IoPath.GetFileName(l.FilePath)}]");
             LayerCombo.SelectedIndex = 0;
         }
 
@@ -49,122 +65,52 @@ namespace cztApp1.Views
             if (idx < 0 || _layerService == null) return;
             var layers = _layerService.Layers.ToList();
             if (idx >= layers.Count) return;
-            // 缩放到选中图层
             await _layerService.ZoomToLayerAsync(layers[idx]);
         }
 
-        /// <summary>
-        /// 加载工具（根据toolName预设标题和模式）
-        /// </summary>
-        public void LoadTool(string toolName)
-        {
-            _lastOutputPath = null;
-            StatusBorder.Visibility = Visibility.Collapsed;
+        #region 画布自由绘制
 
-            if (toolName == "StatChart")
+        private void Canvas_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.LeftButton != MouseButtonState.Pressed) return;
+            _isDrawing = true;
+            _lastPoint = e.GetPosition(PreviewCanvas);
+            _currentLine = new Polyline
             {
-                MapTitle.Text = "地质灾害统计图";
-                MapSubtitle.Text = "柱状图 / CF分布图 / 饼图 / 综合图";
-            }
-            else if (toolName == "StatTable")
+                Stroke = new SolidColorBrush(Color.FromRgb(0x15, 0x65, 0xC0)),
+                StrokeThickness = 2,
+                StrokeLineJoin = PenLineJoin.Round,
+                StrokeStartLineCap = PenLineCap.Round,
+                StrokeEndLineCap = PenLineCap.Round
+            };
+            _currentLine.Points.Add(_lastPoint);
+            PreviewCanvas.Children.Add(_currentLine);
+            e.Handled = true;
+        }
+
+        private void Canvas_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (!_isDrawing || _currentLine == null) return;
+            var pt = e.GetPosition(PreviewCanvas);
+            if ((pt - _lastPoint).Length > 2)
             {
-                MapTitle.Text = "地质灾害统计表";
-                MapSubtitle.Text = "CSV统计表 / CF分级汇总 / 元数据";
-            }
-            else // ThematicMap or fallback
-            {
-                MapTitle.Text = "长株潭地质灾害专题图";
-                MapSubtitle.Text = "土壤植被指标分析";
+                _currentLine.Points.Add(pt);
+                _lastPoint = pt;
             }
         }
 
-        #region 事件处理
-
-        private async void GenerateMap_Click(object sender, RoutedEventArgs e)
+        private void Canvas_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            if (_service == null)
-            {
-                ShowStatus("⚠ 地图未初始化，请先添加图层", "#E53935");
-                return;
-            }
-
-            ButtonBarEnabled(false);
-            ShowStatus("⏳ 正在生成专题图...", "#1565C0");
-
-            try
-            {
-                var config = BuildConfig();
-                _lastOutputPath = await Task.Run(() =>
-                    _service.ExportThematicMapAsync(config, msg =>
-                        Dispatcher.Invoke(() => ShowStatus($"⏳ {msg}", "#1565C0"))));
-
-                ShowStatus($"✅ 专题图已生成！\n{_lastOutputPath}", "#43A047");
-
-                // 自动打开
-                if (File.Exists(_lastOutputPath))
-                {
-                    try
-                    {
-                        Process.Start(new ProcessStartInfo
-                        {
-                            FileName = _lastOutputPath,
-                            UseShellExecute = true
-                        });
-                    }
-                    catch { }
-                }
-            }
-            catch (Exception ex)
-            {
-                ShowStatus($"❌ 生成失败: {ex.Message}", "#E53935");
-            }
-            finally
-            {
-                ButtonBarEnabled(true);
-            }
+            _isDrawing = false;
+            _currentLine = null;
         }
 
-        private async void ExportLegend_Click(object sender, RoutedEventArgs e)
+        private void ClearCanvas_Click(object sender, RoutedEventArgs e)
         {
-            if (_service == null)
-            {
-                ShowStatus("⚠ 地图未初始化", "#E53935");
-                return;
-            }
-
-            ButtonBarEnabled(false);
-            ShowStatus("⏳ 正在导出图例...", "#1565C0");
-
-            try
-            {
-                var config = BuildConfig();
-                string legendPath = await _service.ExportLegendAsync(config, msg =>
-                    Dispatcher.Invoke(() => ShowStatus($"⏳ {msg}", "#1565C0")));
-
-                ShowStatus($"✅ 图例已导出！\n{legendPath}", "#43A047");
-
-                if (File.Exists(legendPath))
-                {
-                    try
-                    {
-                        Process.Start(new ProcessStartInfo
-                        {
-                            FileName = legendPath,
-                            UseShellExecute = true
-                        });
-                    }
-                    catch { }
-                }
-            }
-            catch (Exception ex)
-            {
-                ShowStatus($"❌ 导出失败: {ex.Message}", "#E53935");
-            }
-            finally
-            {
-                ButtonBarEnabled(true);
-            }
+            PreviewCanvas.Children.Clear();
         }
+
+        #endregion
 
         private void BrowseFolder_Click(object sender, RoutedEventArgs e)
         {
@@ -180,56 +126,64 @@ namespace cztApp1.Views
             {
                 try { Directory.CreateDirectory(folder); } catch { }
             }
-
             try
             {
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = folder,
-                    UseShellExecute = true
-                });
+                Process.Start(new ProcessStartInfo { FileName = folder, UseShellExecute = true });
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"无法打开目录: {ex.Message}", "错误",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"无法打开目录: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        #endregion
-
-        #region 辅助方法
-
-        private ThematicMapService.ThematicMapConfig BuildConfig()
+        private async void GenerateMap_Click(object sender, RoutedEventArgs e)
         {
-            return new ThematicMapService.ThematicMapConfig
+            if (_service == null)
             {
-                Title = MapTitle.Text.Trim(),
-                Subtitle = MapSubtitle.Text.Trim(),
-                OutputFolder = OutputFolder.Text.Trim(),
-                ImageWidth = int.Parse((ImageWidth.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "1200"),
-                ImageHeight = int.Parse((ImageHeight.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "900"),
-                IncludeLegend = IncludeLegend.IsChecked == true,
-                IncludeScaleBar = IncludeScaleBar.IsChecked == true,
-                IncludeNorthArrow = IncludeNorthArrow.IsChecked == true,
-                IncludeGrid = IncludeGrid.IsChecked == true
-            };
+                ShowStatus("⚠ 请先加载图层到地图", "#E53935");
+                return;
+            }
+
+            ShowStatus("⏳ 正在生成专题图...", "#1565C0");
+
+            try
+            {
+                var config = new ThematicMapService.ThematicMapConfig
+                {
+                    Title = MapTitle.Text.Trim(),
+                    OutputFolder = OutputFolder.Text.Trim(),
+                    ImageWidth = 1200,
+                    ImageHeight = 900,
+                    IncludeLegend = true,
+                    IncludeScaleBar = true,
+                    IncludeNorthArrow = true,
+                    IncludeGrid = false
+                };
+
+                _lastOutputPath = await Task.Run(() =>
+                    _service.ExportThematicMapAsync(config, msg =>
+                        Dispatcher.Invoke(() => ShowStatus($"⏳ {msg}", "#1565C0"))));
+
+                ShowStatus($"✅ 专题图已生成！\n{_lastOutputPath}", "#43A047");
+
+                if (File.Exists(_lastOutputPath))
+                {
+                    try { Process.Start(new ProcessStartInfo { FileName = _lastOutputPath, UseShellExecute = true }); }
+                    catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowStatus($"❌ 生成失败: {ex.Message}", "#E53935");
+            }
         }
 
         private void ShowStatus(string msg, string colorHex)
         {
             StatusText.Text = msg;
-            StatusText.Foreground = new System.Windows.Media.SolidColorBrush(
-                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(colorHex)!);
+            StatusText.Foreground = new SolidColorBrush(
+                (Color)ColorConverter.ConvertFromString(colorHex)!);
             StatusBorder.Visibility = Visibility.Visible;
         }
-
-        private void ButtonBarEnabled(bool enabled)
-        {
-            BtnGenerateMap.IsEnabled = enabled;
-            BtnExportLegend.IsEnabled = enabled;
-        }
-
-        #endregion
     }
 }
