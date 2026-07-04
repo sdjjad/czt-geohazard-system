@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-此文件为 Claude Code 提供项目指引，优先于所有默认行为。
+此文件为 Claude Code 提供项目指引。
 
 ## 🔴 最高原则
 
@@ -10,7 +10,7 @@
 
 ## 项目概述
 
-**长株潭地质灾害系统（cztApp）** — Mini ArcGIS Pro，面向湖南省长株潭地区地质灾害评估。WPF .NET 10 桌面应用。
+**长株潭地质灾害发育特征专题系统——土壤植被（cztApp）** — Mini ArcGIS Pro，面向湖南省长株潭地区地质灾害与土壤植被关系评估。WPF .NET 10 桌面应用。
 
 ### 构建与运行
 
@@ -33,13 +33,21 @@ dotnet run --project cztApp1/cztApp1.csproj
 
 **WPF .NET 10 code-behind 模式。** `App.OnStartup` → `SplashWindow` → `MainWindow`。
 
+### 性能关键
+
+- `AllowsTransparency="False"` — **绝不能改回 True**，否则强制软件渲染，地图卡死
+- `App.xaml.cs` + `MapView.xaml.cs` 强制 `RenderMode.Default` GPU 硬件加速
+- 窗口无 `DropShadowEffect`（位图特效触发软件渲染）
+- `MouseMove` 坐标采集节流 100ms，`ScreenToLocation` 是重操作
+
 ### 地图引擎
 
 **Esri.ArcGISRuntime.WPF 200.6.0**（ArcGIS Runtime SDK for .NET）：
-- `ShapefileFeatureTable.OpenAsync(path)` 加载 shp + dbf
-- `FeatureLayer` + `SimpleRenderer` 渲染矢量
+- `ShapefileFeatureTable.OpenAsync(path)` 加载 shp + dbf → 实时字段识别
+- `FeatureLayer` + `SimpleRenderer` / `UniqueValueRenderer` / `ClassBreaksRenderer` 渲染矢量
 - `Raster(path)` → `RasterLayer` 渲染栅格
 - `GeometryEngine.Intersects/Contains/AreaGeodetic` 空间分析
+- `MapView.ExportImageAsync()` 导出地图底图
 - 地图初始化为白底无网格：`BackgroundColor=White, BackgroundGrid.IsVisible=false`
 
 ### NuGet 关键包
@@ -49,149 +57,219 @@ dotnet run --project cztApp1/cztApp1.csproj
 | Esri.ArcGISRuntime.WPF | 200.6.0 | 地图引擎 |
 | Esri.ArcGISRuntime.Toolkit.WPF | 200.6.0 | Compass/Legend/TOC 控件 |
 | Dirkster.AvalonDock | 4.74.1 | 可停靠面板系统 |
-| FluentIcons.Wpf | 2.1.331 | 图标库（已安装，未使用） |
 | NetTopologySuite | 2.6.0 | 几何操作 |
 
-### 窗口布局（AvalonDock 可停靠面板）
+---
 
-```
-┌─ 标题栏 ──── [视图] ────────────── [─][□][✕] ─┐
-├─ Ribbon ───────────────────────────────────────┤
-│  数据管理 │ 土壤植被 │ 专题制图                 │
-├────────────────────────────────────────────────┤
-│  DockingManager                                │
-│  ┌ 数据面板 ┐ ┌─ 地图(中心) ─┐ ┌ 图层/符号/地理┐│
-│  │📂连接..  │ │ ArcGIS       │ │(可停靠浮动)   ││
-│  │📋生成..  │ │ Runtime      │ │               ││
-│  │🔍搜索..  │ │              │ │               ││
-│  │📁目录树  │ │              │ │               ││
-│  └─────────┘ └──────────────┘ └───────────────┘│
-├────────────────────────────────────────────────┤
-│ 状态栏 ── 图层数 ── 比例尺 ── 坐标 ────────────┘
-```
+## 启动与窗口
+
+### SplashWindow
+- 暗色启动屏（#1B1F2B），显示标题"长株潭地质灾害发育特征专题系统——土壤植被"
+- 3 个加载点动画，3.2 秒后自动进入 MainWindow
+- 无英文
+
+### MainWindow
+- 自定义标题栏：undo/redo + 视图菜单 + 最小化/最大化/关闭
+- Ribbon 三页签 + AvalonDock 四面板 + 状态栏
+- 状态栏实时显示：图层数 / 比例尺 / 坐标（从 ArcGIS Runtime 获取）
 
 ---
 
-## Ribbon 按钮布局（全部实装，无占位）
+## Ribbon 按钮布局（全部实装）
 
-### 数据管理 Tab（AccentBlue #1565C0 统一配色）
-
-| 组 | 按钮 | Tag | 功能 |
-|----|------|-----|------|
-| 空间数据 | 导入数据 | ImportData | 文件对话框多选shp/tif → 添加到地图 |
-| | 空间查询 | SpatialQuery | 源图层∩目标图层相交查询 → DataGrid |
-| | 空间分析 | SpatialAnalysis | 打开地理分析面板（CF值/缓冲区/叠加） |
-| | 制图 | Mapping | 打开专题制图面板 |
-| 属性数据 | 属性浏览 | AttributeBrowse | 读取shp的DBF → DataGrid → 复制/导出CSV |
-| | 属性查询 | AttributeQuery | WHERE条件查询 → 结果导出CSV |
-| | 属性管理 | AttributeManage | 字段编辑 |
-
-### 土壤植被 Tab（语义色：棕/蓝/绿/绿/红）
+### 数据管理 Tab（AccentBlue #1565C0 配色）
 
 | 按钮 | Tag | 功能 |
 |------|-----|------|
-| 土壤类型 | SoilTypeAnalysis | 选择分类面图层+灾害点图层 → CF值空间分析 |
-| 土壤湿度 | SoilMoisture | 同上，针对土壤湿度指标 |
-| 植被类型 | VegType | 同上，针对植被类型指标 |
-| 植被覆盖度 | VegCoverage | 同上，针对FVC指标 |
-| NDVI | NDVI | 同上，针对NDVI指标 |
+| 导入数据 | ImportData | 文件对话框多选shp/tif → 添加到地图 |
+| 空间查询 | SpatialQuery | 源图层∩目标图层相交查询 |
+| 空间分析 | SpatialAnalysis | 打开地理分析面板 |
+| 制图 | Mapping | 打开专题制图面板 |
+| 属性浏览 | AttributeBrowse | 读取shp的DBF → DataGrid → 导出CSV |
+| 属性查询 | AttributeQuery | WHERE条件查询 |
+| 属性管理 | AttributeManage | 可编辑DataGrid+保存到SHP+添加字段 |
 
-### 专题制图 Tab（AccentBlue 统一配色）
+### 土壤植被 Tab（语义色）
 
 | 按钮 | Tag | 功能 |
 |------|-----|------|
-| 统计图 | StatChart | 生成柱状图/CF分布图/饼图/综合图PNG |
-| 统计表 | StatTable | 生成CSV统计表/CF分级汇总/JSON元数据 |
-| 专题图 | ThematicMap | 生成专题地图PNG（图名+图例+比例尺+指北针） |
+| 土壤类型 | SoilTypeAnalysis | 面图层+灾害点 → CF值空间分析 |
+| 土壤湿度 | SoilMoisture | 同上 |
+| 植被类型 | VegType | 同上 |
+| 植被覆盖度 | VegCoverage | 同上 |
+| NDVI | NDVI | 同上 |
 
-### 图标系统
+### 专题制图 Tab
 
-所有 Ribbon 按钮图标使用**内联 WPF Path 几何图形**（`Viewbox > Canvas > Path`），不使用 PNG 文件。仅 `undo.png` 和 `redo.png` 保留用于标题栏。
+| 按钮 | Tag | 功能 |
+|------|-----|------|
+| 统计图 | StatChart | 查看输出目录中已生成的PNG统计图 |
+| 统计表 | StatTable | 查看输出目录中CSV统计表 |
+| 专题图 | ThematicMap | 专题图面板（真实地图+可拖动图例/比例尺/指北针） |
 
 ---
 
-## 面板 API
+## 面板系统
 
+### 默认加载
+只显示数据面板和图层面板。符号面板和地理处理面板默认隐藏，点击相关功能时自动弹出。
+
+### 面板 API
 ```csharp
-// 每个面板套 PanelBorderStyle 白色圆角边框
 DataPanelAnchor.Show();     DataPanelAnchor.Hide();
 LayerPanelAnchor.Show();    LayerPanelAnchor.Hide();
 SymbolPanelAnchor.Show();   SymbolPanelAnchor.Hide();
 GeoPanelAnchor.Show();      GeoPanelAnchor.Hide();
 
-// 强制置顶（解决被其他面板遮挡）
+// 强制前置
+SymbolPanelAnchor.IsActive = true;
+SymbolPanelAnchor.IsSelected = true;
 GeoPanelAnchor.IsActive = true;
 GeoPanelAnchor.IsSelected = true;
 ```
+
+### 图层面板交互
+- 点击图层名整行 → 打开符号系统
+- 点击符号色块 → 打开符号系统
+- 右键菜单：缩放/符号系统/属性浏览/上移/下移/移除
+- 双击图层名 → 缩放至图层
+
+---
+
+## 符号系统面板
+
+- **单一符号**：填充色/透明度/轮廓色/线宽 可编辑
+- **按字段配色**（新增）：选择字段 + 色带 → 自动 UniqueValue/ClassBreaks 渲染器
+  - 5 种预设色带：蓝白红 / 绿黄红 / 蓝青绿 / 彩虹 / ArcGIS默认
+  - 文本字段 → UniqueValueRenderer
+  - 数值字段（>10唯一值）→ ClassBreaksRenderer（分位数5级）
+- 双击颜色块 → 弹出20色预设色板
+
+---
+
+## 专题制图面板（重做版）
+
+- 从 ArcGIS Runtime 导出现实地图作为底图
+- 读取图层真实 Renderer 生成彩色图例（非假图例）
+- 真实比例尺（根据当前地图比例计算）+ 黑白指北针
+- 图例/比例尺/指北针全部可鼠标拖动定位
+- 刷新底图→调整位置→生成PNG
+
+---
+
+## 地理分析面板
+
+### 分析流程
+```
+选择分类面图层 → 选择灾害点图层 → 选择分类字段
+→ [可选] 分级分区方法 + 分类数 → 运行分析
+→ CF值统计表 + 柱状图 + CF分级汇总
+```
+
+### 分级分区（新增）
+数值字段自动重分类，4 种方法：
+- 自然间断点分级法（Jenks 优化算法）
+- 等间距分级
+- 分位数分级
+- 标准差分级
+
+分类数 3/4/5/7/10 可选。不选则按字段原值分组。
+
+### CF 值计算
+确定性系数法：`CF = (PPa - PPs) / (PPa * (1 - PPs))`
+基于 `GeometryEngine.Intersects` 真实空间叠加，不用模拟数据。
 
 ---
 
 ## 核心文件
 
+### 根目录
 | 文件 | 功能 |
 |------|------|
-| `MainWindow.xaml` | 完整布局：标题栏、视图菜单、Ribbon（3个Tab）、4个面板、状态栏 |
-| `MainWindow.xaml.cs` | 面板开关逻辑、工具路由、符号编辑器、数据目录树、属性表生成触发 |
-| `Views/MapView.xaml(.cs)` | ArcGIS MapView 控件，图层管理、符号渲染 |
-| `Services/MapLayerService.cs` | MapLayer 类 + 图层集合 ObservableCollection |
-| `Services/GeoAnalysisService.cs` | **真实空间分析**：GeometryEngine点面叠加 → CF值计算 → 输出CSV/JSON/HTML/PNG |
-| `Services/ChartImageService.cs` | WPF DrawingVisual 渲染统计图表 PNG |
-| `Services/ThematicMapService.cs` | WPF DrawingVisual 合成专题图 PNG（图名+图例+比例尺+指北针） |
-| `Services/AttributeTableGenerator.cs` | 扫描空间数据shp → 读取DBF → 镜像生成CSV到属性数据目录 |
-| `Models/GeoAnalysisModels.cs` | ModuleRegistry、AnalysisConfig、StatResult、ChartData 等 |
-| `Models/SpatialDataModels.cs` | SpatialDataType 枚举、SpatialDataHelper |
-| `Models/SymbolModels.cs` | VectorSymbol、RasterSymbol、SymbolItem |
-| `Views/GeoProcessToolView.xaml(.cs)` | 地理分析工具面板：图层选择→运行→表格+图表 |
-| `Views/ThematicMapToolView.xaml(.cs)` | 专题制图配置面板：图名/尺寸/元素开关 → 生成PNG |
-| `Views/Tools/AttributeTableView.xaml(.cs)` | 属性浏览：DataGrid + 导出CSV |
-| `Views/Tools/AttributeQueryView.xaml(.cs)` | 属性查询：WHERE条件 + 结果导出 |
-| `Views/Tools/SpatialQueryView.xaml(.cs)` | 空间查询：Intersect/Contains + 结果展示 |
-| `Styles/ButtonStyles.xaml` | RbnBtn、RbnSeparator、RbnIcon、RbnLabel 样式 |
-| `Styles/TabStyles.xaml` | RibbonTC、RibbonTabItem、GrpLbl 样式 |
-| `Styles/PanelStyles.xaml` | PanelBorderStyle、PanelTitleStyle、PanelIconBtnStyle |
+| `App.xaml(.cs)` | 启动入口，强制 GPU 渲染 |
+| `MainWindow.xaml(.cs)` | 完整布局+事件路由+符号编辑器+数据目录树+面板管理 |
+| `SplashWindow.xaml(.cs)` | 启动屏 |
 | `SystemIconProvider.cs` | Windows 系统图标提供 |
+| `AssemblyInfo.cs` | 程序集信息 |
 
----
+### Services/
+| 文件 | 功能 |
+|------|------|
+| `MapLayerService.cs` | MapLayer 类 + 图层集合 + AddLayer/Remove/Reorder + 按字段配色代理 |
+| `GeoAnalysisService.cs` | 真实空间分析：GeometryEngine 点面叠加 → CF 值计算 → CSV/JSON/HTML/PNG 输出 |
+| `Reclassifier`（同一文件） | 分级分区：EqualInterval/Quantile/StdDev/Jenks 四种算法 |
+| `ChartImageService.cs` | WPF DrawingVisual 渲染统计图表 PNG |
+| `ThematicMapService.cs` | WPF DrawingVisual 合成专题图 PNG |
+| `AttributeTableGenerator.cs` | 扫描空间数据 → 读取 DBF → 镜像生成 CSV 到属性数据目录 |
 
-## 数据路径
+### Models/
+| 文件 | 功能 |
+|------|------|
+| `GeoAnalysisModels.cs` | ModuleRegistry（全部模块定义）、AnalysisConfig、StatResult、ChartData、ClassBreak |
+| `SpatialDataModels.cs` | SpatialDataType 枚举、SpatialFileInfo、SpatialDataHelper |
+| `SymbolModels.cs` | VectorSymbol、RasterSymbol、SymbolItem（INotifyPropertyChanged） |
 
-用户通过数据面板顶部 📂 按钮**动态连接**本地文件夹，不再硬编码：
-- 空间数据根目录：用户自选
-- 属性数据根目录：自动推断（空间数据的兄弟文件夹 `属性数据`）
-- 📋 按钮一键生成所有 shp 对应的属性 CSV（镜像目录结构）
+### Views/
+| 文件 | 功能 |
+|------|------|
+| `MapView.xaml(.cs)` | ArcGIS MapView 控件、图层管理、符号渲染、按字段配色渲染器、坐标/比例尺事件 |
+| `GeoProcessToolView.xaml(.cs)` | 地理分析工具面板：图层选择→分级分区→CF分析→表格+图表 |
+| `ThematicMapToolView.xaml(.cs)` | 专题制图面板：真实底图+可拖动图例/比例尺/指北针+PNG输出 |
+| `AnalysisPanel.xaml(.cs)` | 旧版分析面板（已废弃，提示迁移） |
+
+### Views/Tools/
+| 文件 | 功能 |
+|------|------|
+| `AttributeTableView.xaml(.cs)` | 属性浏览：DataGrid + 选择图层 + 导出CSV + SelectLayerByFilePath |
+| `AttributeQueryView.xaml(.cs)` | 属性查询：WHERE条件 + 字段选择 + 结果导出 |
+| `AttributeManageView.xaml(.cs)` | 属性管理：可编辑 DataGrid + 保存到 SHP + 添加字段 |
+| `SpatialQueryView.xaml(.cs)` | 空间查询：Intersect/Contains + 结果展示 |
+
+### Views/ Converters
+| 文件 | 功能 |
+|------|------|
+| `GeoConverters.cs` | CfToRiskConverter、CountToIndexConverter |
+| `SymbolPreviewConverter.cs` | 符号预览图生成 |
+| `HexToBrushConverter.cs` | 十六进制颜色转换 |
+| `MapLayerTypeConverter.cs` | 图层类型转换 |
+
+### Styles/
+| 文件 | 功能 |
+|------|------|
+| `Brushes.xaml` | 全局颜色：AccentBlue=#1565C0、AppBg=#F2F2F2 等 |
+| `ButtonStyles.xaml` | RbnBtn、RbnSeparator、RbnIcon、RbnLabel |
+| `TabStyles.xaml` | RibbonTC、RibbonTabItem、GrpLbl |
+| `PanelStyles.xaml` | PanelBorderStyle、PanelTitleStyle |
+| `ControlStyles.xaml` | 🔥 ArcGIS Pro 风格全局控件样式：ComboBox/TextBox/DataGrid/ScrollBar/Button |
 
 ---
 
 ## 样式约定
 
 - **字体**：Microsoft YaHei UI
-- **AccentBlue**：#1565C0
-- **AppBg**：#F2F2F2
+- **AccentBlue**：#1565C0 / **AppBg**：#F2F2F2
+- **悬停**：#BBDEFB（浅蓝）/ **选中**：#0D47A1（深蓝边框）
 - **面板外框**：PanelBorderStyle（#FBFBFB 背景，#C8C8C8 边框，CornerRadius=6）
 - **Ribbon 按钮**：RbnBtn（56px高，hover时蓝灰边框+淡蓝底）
-- **Ribbon 图标**：Viewbox > Canvas > Path 内联几何图形
+- **全局控件**：ControlStyles.xaml（ComboBox白底蓝边框、TextBox聚焦蓝框、DataGrid浅灰表头、ScrollBar 6px细条）
 - **Commit 信息**：中文
-- **按钮标签**：Tag 字符串路由到对应功能
+- **按钮路由**：Tag 字符串 → `OpenTool_Click` → switch 分发
 
 ---
 
-## 分析引擎
+## 数据路径
 
-### 真实空间分析流程
+用户通过数据面板顶部 📂 按钮动态连接本地文件夹：
+- 空间数据根目录：用户自选
+- 属性数据根目录：自动推断（空间数据的兄弟文件夹 `属性数据`）
+- 📋 按钮一键生成所有 shp 对应的属性 CSV
+- 空间数据只读不写
 
-```
-用户加载图层到地图 → 打开分析工具 → 选择分类面图层+灾害点图层
-→ GeometryEngine.Intersects 点面叠加
-→ GeometryEngine.AreaGeodetic 测地面积
-→ CF值 = (PPa-PPs)/(PPa(1-PPs)) 确定性系数法
-→ 输出: CSV统计表 + CF汇总 + JSON元数据 + HTML报告 + 4张统计图PNG
-```
+---
 
-**不使用模拟/随机数据。** 必须基于实际加载的 GIS 图层数据。
+## 右键菜单
 
-### 属性表同步
-
-```
-空间数据/xxx/yyy.shp  ←→  属性数据/xxx/yyy.csv
-生成前先清理孤儿CSV（源SHP已删除的）→ 覆盖生成 → 清理空目录
-```
+| 触发位置 | 菜单项 |
+|---------|--------|
+| 数据面板树（SHP文件） | 添加到地图 / 缩放至图层 / 📋 属性浏览 / 属性 |
+| 图层面板树 | 缩放至图层 / 符号系统 / 📋 属性浏览(矢) / 上移 / 下移 / 移除 |
