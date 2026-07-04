@@ -571,10 +571,39 @@
                                 <Border Margin="0" Style="{StaticResource PanelBorderStyle}">
                                     <Grid>
                                         <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
                                         </Grid.RowDefinitions>
 
-                                        <Border Grid.Row="0" x:Name="SearchBorder" Background="White" BorderBrush="#D0D0D0"
+                                        <!-- 文件夹连接 -->
+                                        <Border Grid.Row="0" Background="White" BorderBrush="#D0D0D0"
+                                                BorderThickness="1" CornerRadius="3" Margin="0,0,0,4" Padding="4,3">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Button Grid.Column="0" Content="📂" Width="24" Height="22" FontSize="11"
+                                                        Click="ConnectFolder_Click" Background="#E8E8E8" BorderThickness="0"
+                                                        Cursor="Hand" ToolTip="连接空间数据文件夹"/>
+                                                <TextBlock Grid.Column="1" x:Name="FolderPathLabel"
+                                                           Text="点击📂连接空间数据文件夹..." FontSize="9"
+                                                           Foreground="#999" VerticalAlignment="Center"
+                                                           Margin="4,0" TextTrimming="CharacterEllipsis"/>
+                                                <Button Grid.Column="2" x:Name="BtnGenAttr" Content="📋" Width="24" Height="22"
+                                                        FontSize="11" Click="GenerateAttrTables_Click"
+                                                        Background="#E8E8E8" BorderThickness="0" Cursor="Hand"
+                                                        ToolTip="生成属性表(CSV)" IsEnabled="False"/>
+                                                <Button Grid.Column="3" Content="🔄" Width="24" Height="22" FontSize="11"
+                                                        Click="RefreshFolder_Click" Background="#E8E8E8"
+                                                        BorderThickness="0" Cursor="Hand" Margin="2,0,0,0"
+                                                        ToolTip="刷新文件夹"/>
+                                            </Grid>
+                                        </Border>
+
+                                        <Border Grid.Row="1" x:Name="SearchBorder" Background="White" BorderBrush="#D0D0D0"
                                                 BorderThickness="1" CornerRadius="3" Height="26" Margin="0,0,0,6"
                                                 MouseEnter="SearchBorder_MouseEnter" MouseLeave="SearchBorder_MouseLeave"
                                                 GotFocus="SearchBorder_GotFocus" LostFocus="SearchBorder_LostFocus"
@@ -596,7 +625,7 @@
                                             </Grid>
                                         </Border>
 
-                                        <Grid Grid.Row="1" Margin="0,0,0,6">
+                                        <Grid Grid.Row="2" Margin="0,0,0,6">
                                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="2"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                             <Button Grid.Column="0" x:Name="BtnSpatial" Content="空间数据管理" Click="SwitchToSpatial" Height="26" FontSize="10" Padding="8,0">
                                                 <Button.Style>
@@ -638,7 +667,7 @@
                                             </Button>
                                         </Grid>
 
-                                        <TreeView Grid.Row="2" x:Name="DataTree" BorderThickness="0" Background="Transparent" FontSize="12"
+                                        <TreeView Grid.Row="3" x:Name="DataTree" BorderThickness="0" Background="Transparent" FontSize="12"
                                                   ItemContainerStyle="{StaticResource DataTreeItemStyle}"/>
                                     </Grid>
                                 </Border>
@@ -657,20 +686,26 @@
 
                             <!-- 图层面板 -->
                             <avalonDock:LayoutAnchorable x:Name="LayerPanelAnchor" Title="图层" CanClose="False" ContentId="LayerPanel">
-                                <TreeView x:Name="LayerTreeView" Background="Transparent" BorderThickness="0"
-                                          FontSize="11" AllowDrop="True" ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                          ItemContainerStyle="{StaticResource LayerTreeItemStyle}"
-                                          ItemTemplate="{StaticResource LayerTreeTemplate}"/>
+                                <Border Style="{StaticResource PanelBorderStyle}">
+                                    <TreeView x:Name="LayerTreeView" Background="Transparent" BorderThickness="0"
+                                              FontSize="11" AllowDrop="True" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                              ItemContainerStyle="{StaticResource LayerTreeItemStyle}"
+                                              ItemTemplate="{StaticResource LayerTreeTemplate}"/>
+                                </Border>
                             </avalonDock:LayoutAnchorable>
 
                             <!-- 符号面板 -->
                             <avalonDock:LayoutAnchorable x:Name="SymbolPanelAnchor" Title="符号系统" ContentId="SymbolPanel">
-                                <StackPanel x:Name="SymbolEditorHost" Margin="0,0,0,4"/>
+                                <Border Style="{StaticResource PanelBorderStyle}">
+                                    <StackPanel x:Name="SymbolEditorHost" Margin="0,0,0,4"/>
+                                </Border>
                             </avalonDock:LayoutAnchorable>
 
                             <!-- 地理处理面板 -->
                             <avalonDock:LayoutAnchorable x:Name="GeoPanelAnchor" Title="地理处理" ContentId="GeoPanel">
-                                <ContentControl x:Name="GeoPanelContent"/>
+                                <Border Style="{StaticResource PanelBorderStyle}">
+                                    <ContentControl x:Name="GeoPanelContent"/>
+                                </Border>
                             </avalonDock:LayoutAnchorable>
 
                         </avalonDock:LayoutAnchorablePane>

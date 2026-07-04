@@ -19,8 +19,13 @@ public partial class MapView : UserControl
     {
         InitializeComponent();
 
-        _map = new Esri.ArcGISRuntime.Mapping.Map(SpatialReferences.Wgs84);
+        _map = new Esri.ArcGISRuntime.Mapping.Map(SpatialReferences.Wgs84)
+        {
+            BackgroundColor = System.Drawing.Color.White
+        };
         EsriMapView.Map = _map;
+        if (EsriMapView.BackgroundGrid != null)
+            EsriMapView.BackgroundGrid.IsVisible = false;
     }
 
     #region Public API

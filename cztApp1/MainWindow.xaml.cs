@@ -845,7 +845,8 @@ namespace cztApp1
             BtnSpatial.Foreground = Brushes.White;
             BtnAttribute.Background = new SolidColorBrush(Color.FromRgb(0xE8, 0xE8, 0xE8));
             BtnAttribute.Foreground = new SolidColorBrush(Color.FromRgb(0x55, 0x55, 0x55));
-            LoadDirectoryTree(SpatialDataPath);
+            _currentRootPath = _spatialDataPath;
+            LoadDirectoryTree(_spatialDataPath);
         }
 
         private void SwitchToAttribute(object sender, RoutedEventArgs e)
@@ -854,7 +855,86 @@ namespace cztApp1
             BtnAttribute.Foreground = Brushes.White;
             BtnSpatial.Background = new SolidColorBrush(Color.FromRgb(0xE8, 0xE8, 0xE8));
             BtnSpatial.Foreground = new SolidColorBrush(Color.FromRgb(0x55, 0x55, 0x55));
-            LoadDirectoryTree(AttributeDataPath);
+            _currentRootPath = _attributeDataPath;
+            LoadDirectoryTree(_attributeDataPath);
+        }
+
+        // 动态数据路径（默认使用常量，可连接自定义文件夹）
+        private string _spatialDataPath = SpatialDataPath;
+        private string _attributeDataPath = AttributeDataPath;
+
+        private async void ConnectFolder_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new Microsoft.Win32.OpenFolderDialog { Title = "选择空间数据根目录" };
+            if (dlg.ShowDialog() != true) return;
+
+            _spatialDataPath = dlg.FolderName;
+            _currentRootPath = _spatialDataPath;
+            FolderPathLabel.Text = _spatialDataPath;
+
+            // 自动推断属性数据文件夹
+            var inferred = AttributeTableGenerator.InferAttrRoot(_spatialDataPath);
+            if (inferred != null)
+            {
+                _attributeDataPath = inferred;
+                BtnGenAttr.IsEnabled = true;
+                BtnGenAttr.ToolTip = $"生成属性表到: {_attributeDataPath}";
+            }
+            else
+            {
+                _attributeDataPath = Path.Combine(
+                    Directory.GetParent(_spatialDataPath)?.FullName ?? _spatialDataPath,
+                    "属性数据");
+                BtnGenAttr.IsEnabled = true;
+            }
+
+            // 刷新目录树
+            SwitchToSpatial(sender, e);
+
+            // 统计文件
+            var (shp, tif) = AttributeTableGenerator.CountSpatialFiles(_spatialDataPath);
+            StatusBar1.Text = $"已连接: {Path.GetFileName(_spatialDataPath)} — {shp} SHP, {tif} TIF";
+            RecordOperation($"连接文件夹: {_spatialDataPath}");
+        }
+
+        private async void GenerateAttrTables_Click(object sender, RoutedEventArgs e)
+        {
+            BtnGenAttr.IsEnabled = false;
+            StatusBar1.Text = "⏳ 正在生成属性表...";
+
+            try
+            {
+                var generated = await AttributeTableGenerator.GenerateAllAsync(
+                    _spatialDataPath, _attributeDataPath,
+                    (current, total, msg) =>
+                    {
+                        Dispatcher.Invoke(() =>
+                            StatusBar1.Text = $"⏳ 生成属性表: {current}/{total} — {msg}");
+                    });
+
+                StatusBar1.Text = $"✅ 已生成 {generated.Count} 个属性表到: {_attributeDataPath}";
+                MessageBox.Show($"完成！已生成 {generated.Count} 个属性表。\n\n输出目录:\n{_attributeDataPath}",
+                    "属性表生成完成", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                // 切换到属性数据视图
+                SwitchToAttribute(sender, e);
+            }
+            catch (Exception ex)
+            {
+                StatusBar1.Text = $"❌ 生成失败: {ex.Message}";
+                MessageBox.Show($"生成属性表失败:\n{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                BtnGenAttr.IsEnabled = true;
+            }
+        }
+
+        private void RefreshFolder_Click(object sender, RoutedEventArgs e)
+        {
+            LoadDirectoryTree(_currentRootPath);
+            var (shp, tif) = AttributeTableGenerator.CountSpatialFiles(_spatialDataPath);
+            StatusBar1.Text = $"已刷新: {shp} SHP, {tif} TIF";
         }
 
         #region 目录树
