@@ -6,74 +6,66 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <Grid Margin="4,2">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>  <!-- 0: 工具描述 -->
-                <RowDefinition Height="Auto"/>  <!-- 1: 分类图层选择 -->
-                <RowDefinition Height="Auto"/>  <!-- 2: 灾害点图层选择 -->
-                <RowDefinition Height="Auto"/>  <!-- 3: 分类字段 -->
-                <RowDefinition Height="Auto"/>  <!-- 4: 分级分区 -->
-                <RowDefinition Height="Auto"/>  <!-- 5: 分析方法 -->
-                <RowDefinition Height="Auto"/>  <!-- 6: 输出目录 -->
-                <RowDefinition Height="Auto"/>  <!-- 7: 操作按钮 -->
-                <RowDefinition Height="Auto"/>  <!-- 8: 进度 -->
-                <RowDefinition Height="*"/>     <!-- 9: 结果区域 -->
+                <RowDefinition Height="Auto"/><!-- 0: 标题+刷新 -->
+                <RowDefinition Height="Auto"/><!-- 1: 分类面图层 -->
+                <RowDefinition Height="Auto"/><!-- 2: 灾害点图层 -->
+                <RowDefinition Height="Auto"/><!-- 3: 分类字段 -->
+                <RowDefinition Height="Auto"/><!-- 4: 分级分区 -->
+                <RowDefinition Height="Auto"/><!-- 5: 分析方法 -->
+                <RowDefinition Height="Auto"/><!-- 6: 输出 -->
+                <RowDefinition Height="Auto"/><!-- 7: 按钮 -->
+                <RowDefinition Height="Auto"/><!-- 8: 进度 -->
+                <RowDefinition Height="*"/>    <!-- 9: 结果 -->
             </Grid.RowDefinitions>
 
-            <!-- 0. 工具描述 + 刷新 -->
-            <Grid Grid.Row="0" Margin="0,2,0,4">
+            <!-- 0. 标题 + 刷新 -->
+            <Grid Grid.Row="0" Margin="0,2,0,6">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock x:Name="ToolDesc" Text="" FontSize="9"
-                           Foreground="#888888" TextWrapping="Wrap"
+                <TextBlock x:Name="ToolDesc" Text="" FontSize="10"
+                           Foreground="#666" TextWrapping="Wrap"
                            Visibility="Collapsed"/>
-                <Button Grid.Column="1" Content="🔄 刷新图层" Width="76" Height="22" FontSize="9"
+                <Button Grid.Column="1" Content="🔄" Width="26" Height="22" FontSize="11"
                         Click="Refresh_Click" Background="#E8E8E8" BorderThickness="0"
-                        Cursor="Hand" ToolTip="刷新已加载图层列表和字段"/>
+                        Cursor="Hand" ToolTip="刷新图层列表和字段"/>
             </Grid>
 
-            <!-- 1. 分类图层 -->
-            <TextBlock Grid.Row="1" Text="📂 分类面图层" FontSize="11" FontWeight="SemiBold"
-                       Foreground="#333333" Margin="0,6,0,2"/>
-            <TextBlock Text="选择已加载的面图层作为分类数据源" FontSize="8" Foreground="#999" Margin="0,0,0,2"/>
-            <ComboBox Grid.Row="1" x:Name="ClassLayerCombo" Height="26" FontSize="10" Margin="0,0,0,6"
+            <!-- 1. 分类面图层 -->
+            <TextBlock Grid.Row="1" Text="分类面图层" FontSize="11" FontWeight="SemiBold"
+                       Foreground="#333" Margin="0,0,0,2"/>
+            <ComboBox Grid.Row="1" x:Name="ClassLayerCombo" Height="26" FontSize="10" Margin="0,0,0,8"
                       SelectionChanged="LayerCombo_SelectionChanged"/>
 
             <!-- 2. 灾害点图层 -->
-            <TextBlock Grid.Row="2" Text="📍 灾害点图层" FontSize="11" FontWeight="SemiBold"
-                       Foreground="#333333" Margin="0,6,0,2"/>
-            <TextBlock Text="选择已加载的点图层作为灾害数据源" FontSize="8" Foreground="#999" Margin="0,0,0,2"/>
-            <ComboBox Grid.Row="2" x:Name="HazardLayerCombo" Height="26" FontSize="10" Margin="0,0,0,6"/>
+            <TextBlock Grid.Row="2" Text="灾害点图层" FontSize="11" FontWeight="SemiBold"
+                       Foreground="#333" Margin="0,0,0,2"/>
+            <ComboBox Grid.Row="2" x:Name="HazardLayerCombo" Height="26" FontSize="10" Margin="0,0,0,8"/>
 
             <!-- 3. 分类字段 -->
-            <TextBlock Grid.Row="3" Text="🏷 分类字段" FontSize="11" FontWeight="SemiBold"
-                       Foreground="#333333" Margin="0,6,0,2"/>
-            <TextBlock Text="面图层中用于区分分类名称的属性字段" FontSize="8" Foreground="#999" Margin="0,0,0,2"/>
-            <ComboBox Grid.Row="3" x:Name="ClassFieldCombo" Height="26" FontSize="10" Margin="0,0,0,6"/>
+            <TextBlock Grid.Row="3" Text="分类字段" FontSize="11" FontWeight="SemiBold"
+                       Foreground="#333" Margin="0,0,0,2"/>
+            <ComboBox Grid.Row="3" x:Name="ClassFieldCombo" Height="26" FontSize="10" Margin="0,0,0,8"/>
 
-            <!-- 4. 分级分区（下拉菜单式，不挤字） -->
-            <TextBlock Grid.Row="4" Text="📊 分级分区" FontSize="11" FontWeight="SemiBold"
-                       Foreground="#333333" Margin="0,6,0,2"/>
-            <StackPanel Grid.Row="4" Margin="0,0,0,4">
-                <Grid Margin="0,0,0,4">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <ComboBox x:Name="ClassMethod" Height="26" FontSize="10"
-                              SelectionChanged="ClassMethod_SelectionChanged">
-                        <ComboBoxItem IsSelected="True">不分类（按字段原值分组）</ComboBoxItem>
-                        <ComboBoxItem>自然间断点分级法</ComboBoxItem>
-                        <ComboBoxItem>等间距分级</ComboBoxItem>
-                        <ComboBoxItem>分位数分级</ComboBoxItem>
-                        <ComboBoxItem>标准差分级</ComboBoxItem>
-                    </ComboBox>
-                </Grid>
+            <!-- 4. 分级分区 -->
+            <TextBlock Grid.Row="4" Text="分级分区" FontSize="11" FontWeight="SemiBold"
+                       Foreground="#333" Margin="0,0,0,2"/>
+            <StackPanel Grid.Row="4" Margin="0,0,0,8">
+                <ComboBox x:Name="ClassMethod" Height="26" FontSize="10" Margin="0,0,0,4"
+                          SelectionChanged="ClassMethod_SelectionChanged">
+                    <ComboBoxItem IsSelected="True">不分类（按字段原值）</ComboBoxItem>
+                    <ComboBoxItem>自然间断点分级法</ComboBoxItem>
+                    <ComboBoxItem>等间距分级</ComboBoxItem>
+                    <ComboBoxItem>分位数分级</ComboBoxItem>
+                    <ComboBoxItem>标准差分级</ComboBoxItem>
+                </ComboBox>
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="分类数:" FontSize="10" Foreground="#555" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                    <ComboBox Grid.Column="1" x:Name="ClassCountCombo" Height="24" FontSize="10" Width="70" HorizontalAlignment="Left">
+                    <TextBlock Text="分类数" FontSize="10" Foreground="#555" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <ComboBox Grid.Column="1" x:Name="ClassCountCombo" Height="24" FontSize="10" Width="60">
                         <ComboBoxItem>3</ComboBoxItem>
                         <ComboBoxItem>4</ComboBoxItem>
                         <ComboBoxItem IsSelected="True">5</ComboBoxItem>
@@ -84,20 +76,19 @@
             </StackPanel>
 
             <!-- 5. 分析方法 -->
-            <TextBlock Grid.Row="5" Text="🔬 分析方法" FontSize="11" FontWeight="SemiBold"
-                       Foreground="#333333" Margin="0,6,0,2"/>
-            <ComboBox Grid.Row="5" x:Name="ModelMethod" Height="26" FontSize="10" Margin="0,0,0,6">
+            <TextBlock Grid.Row="5" Text="分析方法" FontSize="11" FontWeight="SemiBold"
+                       Foreground="#333" Margin="0,0,0,2"/>
+            <ComboBox Grid.Row="5" x:Name="ModelMethod" Height="26" FontSize="10" Margin="0,0,0,8">
                 <ComboBoxItem IsSelected="True">CF值法（确定性系数）</ComboBoxItem>
                 <ComboBoxItem>信息量法</ComboBoxItem>
             </ComboBox>
 
             <!-- 6. 输出 -->
-            <TextBlock Grid.Row="6" Text="💾 输出目录" FontSize="11" FontWeight="SemiBold"
-                       Foreground="#333333" Margin="0,6,0,2"/>
-            <Grid Grid.Row="6" Margin="0,0,0,6">
+            <TextBlock Grid.Row="6" Text="输出目录" FontSize="11" FontWeight="SemiBold"
+                       Foreground="#333" Margin="0,0,0,2"/>
+            <Grid Grid.Row="6" Margin="0,0,0,8">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBox Grid.Column="0" x:Name="OutputFolder" Height="26" FontSize="10"
                          Text="D:\GeoHazardOutput" VerticalAlignment="Center"/>
@@ -107,8 +98,8 @@
             </Grid>
 
             <!-- 7. 按钮 -->
-            <StackPanel Grid.Row="7" x:Name="ButtonBar" Orientation="Horizontal" Margin="0,4,0,6">
-                <Button Content="▶ 运行分析" Width="100" Height="30" FontSize="11"
+            <StackPanel Grid.Row="7" x:Name="ButtonBar" Orientation="Horizontal" Margin="0,2,0,8">
+                <Button Content="运行分析" Width="90" Height="30" FontSize="11"
                         Background="#1565C0" Foreground="White" BorderThickness="0"
                         Cursor="Hand" Click="RunAnalysis_Click" FontWeight="SemiBold">
                     <Button.Template>
@@ -119,7 +110,7 @@
                         </ControlTemplate>
                     </Button.Template>
                 </Button>
-                <Button Content="💾 保存结果" Width="100" Height="30" FontSize="11"
+                <Button Content="保存结果" Width="90" Height="30" FontSize="11"
                         Background="#43A047" Foreground="White" BorderThickness="0"
                         Cursor="Hand" Click="SaveResults_Click" Margin="6,0,0,0">
                     <Button.Template>
@@ -132,13 +123,13 @@
                 </Button>
             </StackPanel>
 
-            <!-- 7. 进度 -->
+            <!-- 8. 进度 -->
             <TextBlock Grid.Row="8" x:Name="ProgressText" Text=""
-                       FontSize="10" Foreground="#1565C0" Margin="0,2,0,4"
+                       FontSize="10" Foreground="#1565C0" Margin="0,0,0,4"
                        Visibility="Collapsed" TextWrapping="Wrap"/>
 
-            <!-- 8. 结果 -->
-            <Border Grid.Row="9" Background="#FAFAFA" CornerRadius="4" Margin="0,4,0,0" Padding="4">
+            <!-- 9. 结果 -->
+            <Border Grid.Row="9" Background="#FAFAFA" CornerRadius="4" Margin="0,2,0,0" Padding="4">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -147,26 +138,22 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <Grid Grid.Row="0" Margin="2,2,2,4">
-                        <TextBlock x:Name="ResultLabel" Text="📊 分析结果"
-                                   FontSize="10" Foreground="#555" FontWeight="SemiBold"/>
-                    </Grid>
+                    <TextBlock Grid.Row="0" x:Name="ResultLabel" Text="分析结果"
+                               FontSize="10" Foreground="#555" FontWeight="SemiBold"
+                               Margin="2,2,2,4"/>
 
-                    <!-- 柱状图 -->
                     <Border Grid.Row="1" x:Name="ChartContainer" Background="White"
                             BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="3"
                             Height="160" Margin="2,0,2,4" Visibility="Collapsed">
                         <Canvas x:Name="ChartCanvas"/>
                     </Border>
 
-                    <!-- CF汇总条 -->
                     <Border Grid.Row="2" x:Name="CfSummaryContainer" Background="White"
                             BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="3"
                             Padding="6,4" Margin="2,0,2,4" Visibility="Collapsed">
                         <StackPanel x:Name="CfSummaryPanel"/>
                     </Border>
 
-                    <!-- 结果表格 -->
                     <DataGrid Grid.Row="3" x:Name="ResultGrid" AutoGenerateColumns="False"
                               Background="White" BorderBrush="#E0E0E0" FontSize="9"
                               IsReadOnly="True" Margin="2,0,2,2"
@@ -175,11 +162,11 @@
                               AlternatingRowBackground="#F8F8F8">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="分级分类" Binding="{Binding ClassName}" Width="100"/>
-                            <DataGridTextColumn Header="面积(km²)" Binding="{Binding ClassAreaKm2}" Width="65"/>
-                            <DataGridTextColumn Header="灾害数" Binding="{Binding HazardCount}" Width="50"/>
-                            <DataGridTextColumn Header="密度" Binding="{Binding Density}" Width="50"/>
-                            <DataGridTextColumn Header="占比(%)" Binding="{Binding Percentage}" Width="50"/>
-                            <DataGridTextColumn Header="CF值" Binding="{Binding CF}" Width="55">
+                            <DataGridTextColumn Header="面积(km²)" Binding="{Binding ClassAreaKm2}" Width="60"/>
+                            <DataGridTextColumn Header="灾害数" Binding="{Binding HazardCount}" Width="48"/>
+                            <DataGridTextColumn Header="密度" Binding="{Binding Density}" Width="45"/>
+                            <DataGridTextColumn Header="占比(%)" Binding="{Binding Percentage}" Width="48"/>
+                            <DataGridTextColumn Header="CF值" Binding="{Binding CF}" Width="52">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="FontWeight" Value="Bold"/>
@@ -187,7 +174,7 @@
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Header="易发性" Width="65">
+                            <DataGridTextColumn Header="易发性" Width="60">
                                 <DataGridTextColumn.Binding>
                                     <Binding Path="CF" Converter="{StaticResource CfToRiskConverter}"/>
                                 </DataGridTextColumn.Binding>
