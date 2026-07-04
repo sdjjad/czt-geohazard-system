@@ -1,4 +1,5 @@
 using System.Windows.Controls;
+using System.Windows.Media;
 using Esri.ArcGISRuntime.Data;
 using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.Mapping;
@@ -19,6 +20,9 @@ public partial class MapView : UserControl
     {
         InitializeComponent();
 
+        // 强制硬件渲染（禁用软件渲染）
+        RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.Default;
+
         // 设置开发者许可证，去除 "Licensed for Developer" 水印
         try
         {
@@ -34,15 +38,21 @@ public partial class MapView : UserControl
         EsriMapView.Map = _map;
         if (EsriMapView.BackgroundGrid != null)
             EsriMapView.BackgroundGrid.IsVisible = false;
+        EsriMapView.RenderTransform = null; // 禁用可能触发软件渲染的变换
 
-        // 实时坐标和比例尺事件
+        // 比例尺：ViewpointChanged 触发（不频繁，无需节流）
         EsriMapView.ViewpointChanged += (_, _) =>
         {
-            var scale = EsriMapView.MapScale;
-            ScaleChanged?.Invoke(scale);
+            ScaleChanged?.Invoke(EsriMapView.MapScale);
         };
+
+        // 坐标：MouseMove 节流到 100ms 一次，避免 ScreenToLocation 拖死地图
+        var lastCoordUpdate = DateTime.MinValue;
         EsriMapView.MouseMove += (_, e) =>
         {
+            var now = DateTime.UtcNow;
+            if ((now - lastCoordUpdate).TotalMilliseconds < 100) return;
+            lastCoordUpdate = now;
             try
             {
                 var pt = EsriMapView.ScreenToLocation(e.GetPosition(EsriMapView));
