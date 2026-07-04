@@ -7,7 +7,7 @@
         xmlns:views="clr-namespace:cztApp1.Views"
         xmlns:avalonDock="https://github.com/Dirkster99/AvalonDock"
         mc:Ignorable="d"
-        Title="长株潭地质灾害系统" Height="650" Width="1100"
+        Title="长株潭地质灾害发育特征专题系统——土壤植被" Height="650" Width="1100"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
