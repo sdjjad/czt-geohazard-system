@@ -10,11 +10,12 @@
                 <RowDefinition Height="Auto"/>  <!-- 1: 分类图层选择 -->
                 <RowDefinition Height="Auto"/>  <!-- 2: 灾害点图层选择 -->
                 <RowDefinition Height="Auto"/>  <!-- 3: 分类字段 -->
-                <RowDefinition Height="Auto"/>  <!-- 4: 分析方法 -->
-                <RowDefinition Height="Auto"/>  <!-- 5: 输出目录 -->
-                <RowDefinition Height="Auto"/>  <!-- 6: 操作按钮 -->
-                <RowDefinition Height="Auto"/>  <!-- 7: 进度 -->
-                <RowDefinition Height="*"/>     <!-- 8: 结果区域 -->
+                <RowDefinition Height="Auto"/>  <!-- 4: 分级分区 -->
+                <RowDefinition Height="Auto"/>  <!-- 5: 分析方法 -->
+                <RowDefinition Height="Auto"/>  <!-- 6: 输出目录 -->
+                <RowDefinition Height="Auto"/>  <!-- 7: 操作按钮 -->
+                <RowDefinition Height="Auto"/>  <!-- 8: 进度 -->
+                <RowDefinition Height="*"/>     <!-- 9: 结果区域 -->
             </Grid.RowDefinitions>
 
             <!-- 0. 工具描述 + 刷新 -->
@@ -50,18 +51,46 @@
             <TextBlock Text="面图层中用于区分分类名称的属性字段" FontSize="8" Foreground="#999" Margin="0,0,0,2"/>
             <ComboBox Grid.Row="3" x:Name="ClassFieldCombo" Height="26" FontSize="10" Margin="0,0,0,6"/>
 
-            <!-- 4. 分析方法 -->
-            <TextBlock Grid.Row="4" Text="🔬 分析方法" FontSize="11" FontWeight="SemiBold"
+            <!-- 4. 分级分区 -->
+            <TextBlock Grid.Row="4" Text="📊 分级分区" FontSize="11" FontWeight="SemiBold"
                        Foreground="#333333" Margin="0,6,0,2"/>
-            <ComboBox Grid.Row="4" x:Name="ModelMethod" Height="26" FontSize="10" Margin="0,0,0,6">
+            <TextBlock Text="对连续数值字段自动重分类，不选择则按字段原值分组" FontSize="8" Foreground="#999" Margin="0,0,0,2"/>
+            <Grid Grid.Row="4" Margin="0,0,0,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/><ColumnDefinition Width="60"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="方法:" FontSize="10" Foreground="#555" VerticalAlignment="Center"/>
+                <ComboBox Grid.Column="1" x:Name="ClassMethod" Height="24" FontSize="10" Margin="4,0,4,0"
+                          SelectionChanged="ClassMethod_SelectionChanged">
+                    <ComboBoxItem>-- 不分类（按原值） --</ComboBoxItem>
+                    <ComboBoxItem>自然间断点 (Jenks)</ComboBoxItem>
+                    <ComboBoxItem>等间距</ComboBoxItem>
+                    <ComboBoxItem IsSelected="True">分位数</ComboBoxItem>
+                    <ComboBoxItem>标准差</ComboBoxItem>
+                </ComboBox>
+                <TextBlock Grid.Column="2" Text="分类数:" FontSize="10" Foreground="#555" VerticalAlignment="Center" Margin="6,0,4,0"/>
+                <ComboBox Grid.Column="3" x:Name="ClassCountCombo" Height="24" FontSize="10">
+                    <ComboBoxItem>3</ComboBoxItem>
+                    <ComboBoxItem>4</ComboBoxItem>
+                    <ComboBoxItem IsSelected="True">5</ComboBoxItem>
+                    <ComboBoxItem>7</ComboBoxItem>
+                    <ComboBoxItem>10</ComboBoxItem>
+                </ComboBox>
+            </Grid>
+
+            <!-- 5. 分析方法 -->
+            <TextBlock Grid.Row="5" Text="🔬 分析方法" FontSize="11" FontWeight="SemiBold"
+                       Foreground="#333333" Margin="0,6,0,2"/>
+            <ComboBox Grid.Row="5" x:Name="ModelMethod" Height="26" FontSize="10" Margin="0,0,0,6">
                 <ComboBoxItem IsSelected="True">CF值法（确定性系数）</ComboBoxItem>
                 <ComboBoxItem>信息量法</ComboBoxItem>
             </ComboBox>
 
-            <!-- 5. 输出 -->
-            <TextBlock Grid.Row="5" Text="💾 输出目录" FontSize="11" FontWeight="SemiBold"
+            <!-- 6. 输出 -->
+            <TextBlock Grid.Row="6" Text="💾 输出目录" FontSize="11" FontWeight="SemiBold"
                        Foreground="#333333" Margin="0,6,0,2"/>
-            <Grid Margin="0,0,0,6">
+            <Grid Grid.Row="6" Margin="0,0,0,6">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
@@ -73,8 +102,8 @@
                         Cursor="Hand" Margin="3,0,0,0"/>
             </Grid>
 
-            <!-- 6. 按钮 -->
-            <StackPanel Grid.Row="6" x:Name="ButtonBar" Orientation="Horizontal" Margin="0,4,0,6">
+            <!-- 7. 按钮 -->
+            <StackPanel Grid.Row="7" x:Name="ButtonBar" Orientation="Horizontal" Margin="0,4,0,6">
                 <Button Content="▶ 运行分析" Width="100" Height="30" FontSize="11"
                         Background="#1565C0" Foreground="White" BorderThickness="0"
                         Cursor="Hand" Click="RunAnalysis_Click" FontWeight="SemiBold">
@@ -100,12 +129,12 @@
             </StackPanel>
 
             <!-- 7. 进度 -->
-            <TextBlock Grid.Row="7" x:Name="ProgressText" Text=""
+            <TextBlock Grid.Row="8" x:Name="ProgressText" Text=""
                        FontSize="10" Foreground="#1565C0" Margin="0,2,0,4"
                        Visibility="Collapsed" TextWrapping="Wrap"/>
 
             <!-- 8. 结果 -->
-            <Border Grid.Row="8" Background="#FAFAFA" CornerRadius="4" Margin="0,4,0,0" Padding="4">
+            <Border Grid.Row="9" Background="#FAFAFA" CornerRadius="4" Margin="0,4,0,0" Padding="4">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>

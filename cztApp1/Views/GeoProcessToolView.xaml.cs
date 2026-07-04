@@ -192,6 +192,22 @@ namespace cztApp1.Views
                 classField = ClassFieldCombo.SelectedItem?.ToString() ?? "";
             }
 
+            // 读取分级分区设置
+            var classMethod = ClassificationMethod.None;
+            int classCount = 5;
+            if (ClassMethod.SelectedIndex > 0) // 0 = "-- 不分类（按原值） --"
+            {
+                classMethod = ClassMethod.SelectedIndex switch
+                {
+                    1 => ClassificationMethod.NaturalBreaks,
+                    2 => ClassificationMethod.EqualInterval,
+                    3 => ClassificationMethod.Quantile,
+                    4 => ClassificationMethod.StandardDeviation,
+                    _ => ClassificationMethod.None
+                };
+                classCount = int.Parse((ClassCountCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "5");
+            }
+
             var config = new AnalysisConfig
             {
                 ModuleName = _module.Name,
@@ -208,6 +224,7 @@ namespace cztApp1.Views
             {
                 _lastResults = await _service.RunAnalysisAsync(
                     classLayer, hazardLayer, classField, config,
+                    classMethod, classCount,
                     msg => Dispatcher.Invoke(() => ProgressText.Text = $"⏳ {msg}"));
 
                 if (_lastResults.Count == 0)
@@ -258,6 +275,13 @@ namespace cztApp1.Views
             await RefreshFieldListAsync();
             ProgressText.Text = "✅ 图层列表和字段已刷新";
             ProgressText.Visibility = Visibility.Visible;
+        }
+
+        private void ClassMethod_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // 当选择分类方法时，开启/禁用分类数选择
+            bool enabled = ClassMethod.SelectedIndex > 0; // 0 = 不分类
+            ClassCountCombo.IsEnabled = enabled;
         }
 
         private void BrowseFolder_Click(object sender, RoutedEventArgs e)

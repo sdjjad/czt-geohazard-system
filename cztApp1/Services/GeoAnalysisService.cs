@@ -8,6 +8,157 @@ using cztApp1.Models;
 namespace cztApp1.Services
 {
     /// <summary>
+    /// 分级分区方法（对应 ArcGIS Pro 重分类方法）
+    /// </summary>
+    public enum ClassificationMethod
+    {
+        None,              // 不分类（直接使用字段原值作为分类名）
+        NaturalBreaks,     // 自然间断点分级法 (Jenks)
+        EqualInterval,     // 等间距
+        Quantile,          // 分位数
+        StandardDeviation  // 标准差
+    }
+
+    /// <summary>
+    /// 数值重分类器：将连续数值按指定方法分成多个区间
+    /// </summary>
+    public static class Reclassifier
+    {
+        /// <summary>计算分级断点</summary>
+        public static List<double> ComputeBreaks(List<double> values, ClassificationMethod method, int classCount)
+        {
+            if (values.Count == 0) return new List<double> { 0, 1 };
+            var sorted = values.Where(v => !double.IsNaN(v) && !double.IsInfinity(v)).OrderBy(v => v).ToList();
+            if (sorted.Count < classCount) classCount = Math.Max(2, sorted.Count);
+
+            return method switch
+            {
+                ClassificationMethod.EqualInterval => EqualIntervalBreaks(sorted, classCount),
+                ClassificationMethod.Quantile => QuantileBreaks(sorted, classCount),
+                ClassificationMethod.StandardDeviation => StdDevBreaks(sorted),
+                ClassificationMethod.NaturalBreaks => JenksNaturalBreaks(sorted, classCount),
+                _ => EqualIntervalBreaks(sorted, classCount)
+            };
+        }
+
+        /// <summary>根据断点为数值分配分类标签</summary>
+        public static string GetClassLabel(double value, List<double> breaks)
+        {
+            for (int i = 0; i < breaks.Count - 1; i++)
+            {
+                if (i == breaks.Count - 2)
+                    return $"{breaks[i]:F2} - {breaks[i + 1]:F2}";
+                if (value >= breaks[i] && value < breaks[i + 1])
+                    return $"{breaks[i]:F2} - {breaks[i + 1]:F2}";
+            }
+            return $"{breaks[0]:F2} - {breaks[^1]:F2}";
+        }
+
+        /// <summary>检测字段是否为数值类型</summary>
+        public static bool IsNumericField(Esri.ArcGISRuntime.Data.FieldType ft) =>
+            ft == Esri.ArcGISRuntime.Data.FieldType.Int16 ||
+            ft == Esri.ArcGISRuntime.Data.FieldType.Int32 ||
+            ft == Esri.ArcGISRuntime.Data.FieldType.Float32 ||
+            ft == Esri.ArcGISRuntime.Data.FieldType.Float64;
+
+        // ====== 等间距 ======
+        private static List<double> EqualIntervalBreaks(List<double> sorted, int classCount)
+        {
+            double min = sorted[0], max = sorted[^1];
+            double range = max - min;
+            if (range <= 0) range = 1;
+            var breaks = new List<double>();
+            for (int i = 0; i <= classCount; i++)
+                breaks.Add(min + range * i / classCount);
+            return breaks;
+        }
+
+        // ====== 分位数 ======
+        private static List<double> QuantileBreaks(List<double> sorted, int classCount)
+        {
+            var breaks = new List<double> { sorted[0] };
+            int n = sorted.Count;
+            for (int i = 1; i < classCount; i++)
+            {
+                int idx = Math.Min(n - 1, n * i / classCount);
+                breaks.Add(sorted[idx]);
+            }
+            breaks.Add(sorted[^1]);
+            return breaks.Distinct().OrderBy(v => v).ToList();
+        }
+
+        // ====== 标准差 ======
+        private static List<double> StdDevBreaks(List<double> sorted)
+        {
+            double mean = sorted.Average();
+            double stdDev = Math.Sqrt(sorted.Average(v => (v - mean) * (v - mean)));
+            if (stdDev <= 0) stdDev = 1;
+            var breaks = new List<double>();
+            // 以均值为中心，每0.5/1/1.5/2个标准差为间隔
+            for (double m = -2.5; m <= 2.5; m += 0.5)
+                breaks.Add(mean + m * stdDev);
+            // 过滤在数据范围内的断点
+            breaks = breaks.Where(b => b >= sorted[0] && b <= sorted[^1]).ToList();
+            if (breaks.Count < 3)
+                return EqualIntervalBreaks(sorted, 5);
+            if (!breaks.Contains(sorted[0])) breaks.Insert(0, sorted[0]);
+            if (!breaks.Contains(sorted[^1])) breaks.Add(sorted[^1]);
+            return breaks;
+        }
+
+        // ====== Jenks 自然间断点（简化版） ======
+        private static List<double> JenksNaturalBreaks(List<double> sorted, int classCount)
+        {
+            int n = sorted.Count;
+            if (n <= classCount)
+                return sorted.Distinct().OrderBy(v => v).ToList();
+
+            // 计算类内方差矩阵
+            double[,] ssmd = new double[n, n]; // sum of squared deviations
+            for (int i = 0; i < n; i++)
+            {
+                double sum = 0, sumSq = 0;
+                for (int j = i; j < n; j++)
+                {
+                    sum += sorted[j];
+                    sumSq += sorted[j] * sorted[j];
+                    int count = j - i + 1;
+                    ssmd[i, j] = sumSq - (sum * sum) / count;
+                }
+            }
+
+            // DP: 最佳分割
+            double[,] dp = new double[n, classCount + 1];
+            int[,] split = new int[n, classCount + 1];
+            for (int i = 0; i < n; i++)
+                for (int k = 0; k <= classCount; k++)
+                    dp[i, k] = double.MaxValue;
+
+            for (int i = 0; i < n; i++)
+                dp[i, 1] = ssmd[0, i];
+
+            for (int k = 2; k <= classCount; k++)
+                for (int i = k - 1; i < n; i++)
+                    for (int j = k - 2; j < i; j++)
+                    {
+                        double val = dp[j, k - 1] + ssmd[j + 1, i];
+                        if (val < dp[i, k]) { dp[i, k] = val; split[i, k] = j; }
+                    }
+
+            // 回溯提取断点
+            var breaks = new List<double> { sorted[0] };
+            int pos = n - 1;
+            for (int k = classCount; k > 1; k--)
+            {
+                pos = split[pos, k];
+                breaks.Add(sorted[pos]);
+            }
+            breaks.Add(sorted[^1]);
+            return breaks.Distinct().OrderBy(v => v).ToList();
+        }
+    }
+
+    /// <summary>
     /// 真实空间分析服务：基于 ArcGIS Runtime 对已加载图层进行空间叠加统计
     /// 输入：地图中已加载的分类面图层 + 灾害点图层
     /// 输出：CF值、密度、占比等统计结果 + 统计图表PNG
@@ -22,6 +173,8 @@ namespace cztApp1.Services
             MapLayer hazardLayer,
             string classField,
             AnalysisConfig config,
+            ClassificationMethod classMethod = ClassificationMethod.None,
+            int classCount = 5,
             Action<string>? progress = null)
         {
             var results = new List<StatResult>();
@@ -29,8 +182,8 @@ namespace cztApp1.Services
             progress?.Invoke("正在读取分类图层...");
             var classTable = await ShapefileFeatureTable.OpenAsync(classLayer.FilePath);
             var classFeatures = await classTable.QueryFeaturesAsync(new QueryParameters { WhereClause = "1=1" });
-            int classCount = classFeatures.Count();
-            if (classCount == 0) { progress?.Invoke("分类图层无要素"); return results; }
+            int featureCount = classFeatures.Count();
+            if (featureCount == 0) { progress?.Invoke("分类图层无要素"); return results; }
 
             progress?.Invoke("正在读取灾害点图层...");
             var hazardTable = await ShapefileFeatureTable.OpenAsync(hazardLayer.FilePath);
@@ -38,6 +191,42 @@ namespace cztApp1.Services
             var hazardList = hazardFeatures.ToList();
             int totalHazards = hazardList.Count;
             if (totalHazards == 0) { progress?.Invoke("灾害点图层无要素"); return results; }
+
+            // ====== 分级分区：如果指定了分类方法且字段为数值型，先计算断点 ======
+            List<double>? classBreaks = null;
+            bool useReclassify = false;
+            if (classMethod != ClassificationMethod.None && !string.IsNullOrEmpty(classField))
+            {
+                // 检查字段是否为数值类型
+                var fieldInfo = classTable.Fields.FirstOrDefault(f => f.Name == classField);
+                if (fieldInfo != null && Reclassifier.IsNumericField(fieldInfo.FieldType))
+                {
+                    progress?.Invoke($"正在计算分级断点 ({classMethod})...");
+                    var allValues = new List<double>();
+                    foreach (var cf in classFeatures)
+                    {
+                        try
+                        {
+                            var attr = cf.Attributes;
+                            if (attr.ContainsKey(classField))
+                            {
+                                var val = attr[classField];
+                                if (val != null && double.TryParse(val.ToString(),
+                                    System.Globalization.NumberStyles.Any,
+                                    System.Globalization.CultureInfo.InvariantCulture, out double d))
+                                    allValues.Add(d);
+                            }
+                        }
+                        catch { }
+                    }
+                    if (allValues.Count > 0)
+                    {
+                        classBreaks = Reclassifier.ComputeBreaks(allValues, classMethod, classCount);
+                        useReclassify = true;
+                        progress?.Invoke($"分级完成: {classBreaks.Count - 1} 个区间, 范围 [{classBreaks[0]:F2} - {classBreaks[^1]:F2}]");
+                    }
+                }
+            }
 
             // 计算研究区总面积
             double totalStudyAreaKm2 = 0;
@@ -55,19 +244,38 @@ namespace cztApp1.Services
             {
                 processed++;
                 if (processed % 20 == 0)
-                    progress?.Invoke($"空间叠加中: {processed}/{classCount}");
+                    progress?.Invoke($"空间叠加中: {processed}/{featureCount}");
                 if (cf.Geometry == null) continue;
 
                 string className = "其他";
                 try
                 {
                     var attr = cf.Attributes;
-                    if (!string.IsNullOrEmpty(classField) && attr.ContainsKey(classField))
+
+                    if (useReclassify && classBreaks != null)
+                    {
+                        // 使用分级断点重分类：将数值映射到区间标签
+                        if (attr.ContainsKey(classField))
+                        {
+                            var val = attr[classField];
+                            if (val != null && double.TryParse(val.ToString(),
+                                System.Globalization.NumberStyles.Any,
+                                System.Globalization.CultureInfo.InvariantCulture, out double d))
+                                className = Reclassifier.GetClassLabel(d, classBreaks);
+                            else
+                                className = "无数据";
+                        }
+                    }
+                    else if (!string.IsNullOrEmpty(classField) && attr.ContainsKey(classField))
+                    {
                         className = attr[classField]?.ToString() ?? "其他";
+                    }
                     else
+                    {
                         foreach (var kv in attr)
                             if (kv.Key.ToUpper() != "FID" && kv.Value is string s && !string.IsNullOrWhiteSpace(s))
                             { className = s; break; }
+                    }
                 }
                 catch { }
 
