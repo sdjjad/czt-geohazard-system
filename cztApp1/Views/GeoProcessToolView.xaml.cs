@@ -108,9 +108,19 @@ namespace cztApp1.Views
                 HazardLayerCombo.SelectedIndex = 0;
         }
 
+        /// <summary>从ComboBox获取实际选中的矢量图层（跳过占位符和栅格图层索引偏差）</summary>
+        private MapLayer? GetSelectedVectorLayer(ComboBox combo)
+        {
+            int idx = combo.SelectedIndex - 1; // 减去"-- 选择 --"占位符
+            if (idx < 0 || _layerService == null) return null;
+            var vectorLayers = _layerService.Layers.Where(l => l.Type == SpatialDataType.Vector).ToList();
+            if (idx >= vectorLayers.Count) return null;
+            return vectorLayers[idx];
+        }
+
         private void LayerCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // 当分类图层切换时，尝试检测可用字段
+            // 当分类图层切换时，实时检测可用字段
             _ = RefreshFieldListAsync();
         }
 
@@ -119,14 +129,8 @@ namespace cztApp1.Views
             ClassFieldCombo.Items.Clear();
             ClassFieldCombo.Items.Add("（自动检测）");
 
-            int idx = ClassLayerCombo.SelectedIndex;
-            if (idx <= 0 || _layerService == null) { ClassFieldCombo.SelectedIndex = 0; return; }
-
-            var layers = _layerService.Layers.ToList();
-            int layerIdx = idx - 1;
-            if (layerIdx >= layers.Count) return;
-
-            var layer = layers[layerIdx];
+            var layer = GetSelectedVectorLayer(ClassLayerCombo);
+            if (layer == null) { ClassFieldCombo.SelectedIndex = 0; return; }
 
             try
             {
@@ -134,8 +138,15 @@ namespace cztApp1.Views
                 var fields = table.Fields;
                 foreach (var f in fields)
                 {
-                    if (f.FieldType == Esri.ArcGISRuntime.Data.FieldType.Text ||
-                        f.FieldType == Esri.ArcGISRuntime.Data.FieldType.Int32)
+                    // 实时识别所有可用字段类型：文本、整数、浮点、日期等
+                    var ft = f.FieldType;
+                    if (ft == Esri.ArcGISRuntime.Data.FieldType.Text ||
+                        ft == Esri.ArcGISRuntime.Data.FieldType.Int16 ||
+                        ft == Esri.ArcGISRuntime.Data.FieldType.Int32 ||
+                        ft == Esri.ArcGISRuntime.Data.FieldType.Float32 ||
+                        ft == Esri.ArcGISRuntime.Data.FieldType.Float64 ||
+                        ft == Esri.ArcGISRuntime.Data.FieldType.Date ||
+                        ft == Esri.ArcGISRuntime.Data.FieldType.OID)
                     {
                         ClassFieldCombo.Items.Add(f.Name);
                     }
@@ -157,21 +168,15 @@ namespace cztApp1.Views
                 return;
             }
 
-            int classIdx = ClassLayerCombo.SelectedIndex - 1; // 减去"请选择"项
-            int hazardIdx = HazardLayerCombo.SelectedIndex - 1;
+            var classLayer = GetSelectedVectorLayer(ClassLayerCombo);
+            var hazardLayer = GetSelectedVectorLayer(HazardLayerCombo);
 
-            if (classIdx < 0 || hazardIdx < 0)
+            if (classLayer == null || hazardLayer == null)
             {
                 MessageBox.Show("请选择分类面图层和灾害点图层。",
                     "未选择图层", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
-
-            var layers = _layerService.Layers.ToList();
-            if (classIdx >= layers.Count || hazardIdx >= layers.Count) return;
-
-            var classLayer = layers[classIdx];
-            var hazardLayer = layers[hazardIdx];
 
             if (classLayer == hazardLayer)
             {
@@ -237,12 +242,10 @@ namespace cztApp1.Views
                 return;
             }
 
-            int classIdx = ClassLayerCombo.SelectedIndex - 1;
-            int hazardIdx = HazardLayerCombo.SelectedIndex - 1;
-            var layers = _layerService?.Layers.ToList() ?? new();
-
-            string classPath = classIdx >= 0 && classIdx < layers.Count ? layers[classIdx].FilePath : "";
-            string hazardPath = hazardIdx >= 0 && hazardIdx < layers.Count ? layers[hazardIdx].FilePath : "";
+            var classLayer = GetSelectedVectorLayer(ClassLayerCombo);
+            var hazardLayer = GetSelectedVectorLayer(HazardLayerCombo);
+            string classPath = classLayer?.FilePath ?? "";
+            string hazardPath = hazardLayer?.FilePath ?? "";
 
             _service.SaveResults(OutputFolder.Text, _module.Name, _lastResults, classPath, hazardPath);
             MessageBox.Show($"✅ 结果已保存至:\n{OutputFolder.Text}", "保存成功",
