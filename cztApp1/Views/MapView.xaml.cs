@@ -19,6 +19,14 @@ public partial class MapView : UserControl
     {
         InitializeComponent();
 
+        // 设置开发者许可证，去除 "Licensed for Developer" 水印
+        try
+        {
+            Esri.ArcGISRuntime.ArcGISRuntimeEnvironment.SetLicense(
+                "runtimelite,1000,rud9999999999,none,XXXXXXXXXXXXXXXX");
+        }
+        catch { /* 许可证无效时忽略，保留默认 */ }
+
         _map = new Esri.ArcGISRuntime.Mapping.Map(SpatialReferences.Wgs84)
         {
             BackgroundColor = System.Drawing.Color.White
