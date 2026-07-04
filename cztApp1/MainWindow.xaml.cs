@@ -56,9 +56,12 @@ namespace cztApp1
             LayerTreeView.ItemsSource = _mapLayerService.Layers;
             SetupLayerTreeViewEvents();
 
-            // 默认只显示数据面板和图层面板
-            SymbolPanelAnchor.Hide();
-            GeoPanelAnchor.Hide();
+            // 默认只显示数据面板和图层面板（Loaded后执行，避免AvalonDock初始化冲突）
+            Loaded += (_, _) =>
+            {
+                SymbolPanelAnchor.Hide();
+                GeoPanelAnchor.Hide();
+            };
 
             // 实时坐标和比例尺
             MapViewControl.ScaleChanged += scale =>
@@ -572,19 +575,7 @@ namespace cztApp1
 
             var fieldCombo = new ComboBox { Height = 24, FontSize = 10, Margin = new Thickness(0, 0, 0, 4) };
             fieldCombo.Items.Add("-- 选择字段 --");
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    var table = await Esri.ArcGISRuntime.Data.ShapefileFeatureTable.OpenAsync(layer.FilePath);
-                    await Dispatcher.InvokeAsync(() =>
-                    {
-                        foreach (var f in table.Fields)
-                            fieldCombo.Items.Add(f.Name);
-                    });
-                }
-                catch { }
-            });
+            _ = LoadFieldsAsync(fieldCombo, layer.FilePath);
             sp.Children.Add(fieldCombo);
 
             // 色带选择
@@ -615,6 +606,17 @@ namespace cztApp1
             sp.Children.Add(applyBtn);
 
             SymbolEditorHost.Children.Add(sp);
+        }
+
+        private async Task LoadFieldsAsync(ComboBox combo, string filePath)
+        {
+            try
+            {
+                var table = await Esri.ArcGISRuntime.Data.ShapefileFeatureTable.OpenAsync(filePath);
+                foreach (var f in table.Fields)
+                    combo.Items.Add(f.Name);
+            }
+            catch { }
         }
 
         // 预设色带
