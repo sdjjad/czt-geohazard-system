@@ -1003,7 +1003,8 @@ namespace cztApp1
             {
                 Header = sp,
                 Tag = path,
-                FontWeight = isRoot ? FontWeights.SemiBold : FontWeights.Normal
+                FontWeight = isRoot ? FontWeights.SemiBold : FontWeights.Normal,
+                Style = (Style)FindResource("DataTreeItemStyle")
             };
 
             // Store data type info for quick access
