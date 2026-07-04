@@ -145,39 +145,31 @@ namespace cztApp1.Models
         };
 
         // ================================================================
-        // 专题制图 — 全部实装（自动生成带图名/图例/比例尺/指北针的专题图）
+        // 专题制图 — 统计图 / 统计表 / 专题图
         // ================================================================
 
-        public static readonly ModuleInfo MapExport = new()
+        public static readonly ModuleInfo StatChart = new()
         {
-            Name = "地图输出",
-            Description = "自动生成专题图：包含图名、图例、比例尺、指北针，支持PNG格式导出",
-            Parameters = new[] { "图名", "副标题", "图幅尺寸", "图例", "比例尺", "指北针" },
-            Methods = new[] { "PNG输出", "PDF输出" }
+            Name = "统计图",
+            Description = "生成灾害统计分析图表：柱状图、CF分布图、易发性饼图、综合统计图（PNG格式）",
+            Parameters = new[] { "柱状图", "CF分布图", "饼图", "综合图" },
+            Methods = new[] { "PNG图片", "HTML内嵌" }
         };
 
-        public static readonly ModuleInfo LegendSettings = new()
+        public static readonly ModuleInfo StatTable = new()
         {
-            Name = "图例设置",
-            Description = "生成/导出独立图例图片，包含CF分级配色和图层说明",
-            Parameters = new[] { "图例标题", "配色方案" },
-            Methods = new[] { "CF分级配色", "默认配色", "自定义配色" }
+            Name = "统计表",
+            Description = "生成灾害统计表格：CSV统计表、CF分级汇总表、Excel兼容格式",
+            Parameters = new[] { "统计表(CSV)", "CF分级汇总", "元数据(JSON)" },
+            Methods = new[] { "CSV格式", "Excel格式" }
         };
 
-        public static readonly ModuleInfo ReportGen = new()
+        public static readonly ModuleInfo ThematicMap = new()
         {
-            Name = "报表生成",
-            Description = "生成地质灾害统计分析综合报表（HTML格式），含统计表、柱状图、CF汇总",
-            Parameters = new[] { "分析模块", "统计指标" },
-            Methods = new[] { "HTML报告", "Excel报表", "PDF文档" }
-        };
-
-        public static readonly ModuleInfo PrintSettings = new()
-        {
-            Name = "打印设置",
-            Description = "配置打印参数：纸张大小、方向、边距、DPI",
-            Parameters = new[] { "纸张", "方向", "DPI" },
-            Methods = new[] { "A4纵向", "A3横向", "自定义" }
+            Name = "专题图",
+            Description = "自动生成完整专题地图：图名、图例（CF五级配色）、比例尺、指北针，PNG格式导出",
+            Parameters = new[] { "图名", "图例", "比例尺", "指北针", "图幅尺寸" },
+            Methods = new[] { "PNG输出", "高清输出(300DPI)" }
         };
 
         // ================================================================

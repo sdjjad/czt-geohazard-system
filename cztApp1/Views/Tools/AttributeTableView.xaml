@@ -1,0 +1,53 @@
+<UserControl x:Class="cztApp1.Views.Tools.AttributeTableView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="Transparent" FontFamily="Microsoft YaHei UI">
+    <Grid Margin="4,2">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="📋 属性浏览" FontSize="11" FontWeight="SemiBold"
+                   Foreground="#333" Margin="0,2,0,4"/>
+
+        <!-- 图层选择 -->
+        <Grid Grid.Row="1" Margin="0,0,0,4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="图层:" FontSize="10" Foreground="#555" VerticalAlignment="Center" Margin="0,0,4,0"/>
+            <ComboBox Grid.Column="1" x:Name="LayerCombo" Height="24" FontSize="10"
+                      SelectionChanged="LayerCombo_SelectionChanged"/>
+            <Button Grid.Column="2" Content="刷新" Width="44" Height="24" FontSize="9"
+                    Click="Refresh_Click" Background="#E8E8E8" BorderThickness="0" Cursor="Hand" Margin="4,0,0,0"/>
+        </Grid>
+
+        <!-- 记录数 + 字段数 -->
+        <TextBlock Grid.Row="1" x:Name="InfoText" Text="" FontSize="9" Foreground="#999"
+                   Margin="0,0,0,2" HorizontalAlignment="Right"/>
+
+        <!-- 属性表 -->
+        <DataGrid Grid.Row="2" x:Name="AttrGrid" AutoGenerateColumns="True"
+                  Background="White" BorderBrush="#E0E0E0" FontSize="10"
+                  IsReadOnly="True" HeadersVisibility="Column"
+                  HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                  AlternatingRowBackground="#F8F8F8"
+                  GridLinesVisibility="Horizontal"/>
+
+        <!-- 底部操作 -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,4,0,0">
+            <Button Content="📋 复制选中行" Width="90" Height="26" FontSize="9"
+                    Background="#F0F0F0" Foreground="#333" BorderThickness="0"
+                    Cursor="Hand" Click="CopySelected_Click"/>
+            <Button Content="💾 导出CSV" Width="80" Height="26" FontSize="9"
+                    Background="#1565C0" Foreground="White" BorderThickness="0"
+                    Cursor="Hand" Click="ExportCsv_Click" Margin="6,0,0,0"/>
+            <TextBlock x:Name="StatusText" Text="" FontSize="9" Foreground="#43A047"
+                       VerticalAlignment="Center" Margin="10,0,0,0"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

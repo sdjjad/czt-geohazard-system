@@ -11,6 +11,7 @@ using System.Windows.Controls.Primitives;
 using cztApp1.Models;
 using cztApp1.Services;
 using cztApp1.Views;
+using cztApp1.Views.Tools;
 
 namespace cztApp1
 {
@@ -1076,13 +1077,17 @@ namespace cztApp1
 
         #endregion
 
-        #region 分析面板
+        #region 工具面板路由
 
+        // 缓存各工具视图，切换时复用
         private GeoProcessToolView? _geoToolView;
         private ThematicMapToolView? _themeToolView;
+        private AttributeTableView? _attrTableView;
+        private AttributeQueryView? _attrQueryView;
+        private SpatialQueryView? _spatialQueryView;
 
         /// <summary>
-        /// 统一的 Ribbon 按钮 Click 处理器。通过 Tag 区分工具名。
+        /// 统一的 Ribbon 按钮 Click 处理器。通过 Tag 区分工具名，路由到对应视图。
         /// </summary>
         private void OpenTool_Click(object sender, RoutedEventArgs e)
         {
@@ -1090,104 +1095,169 @@ namespace cztApp1
             var module = ResolveTool(tag);
             if (module == null) return;
 
-            // 专题制图工具 → 使用专题图视图
-            if (tag is "MapExport" or "LegendSettings" or "ReportGen")
+            switch (tag)
             {
-                OpenThematicTool(module, tag);
-            }
-            else
-            {
-                OpenGeoTool(module);
+                // === 空间数据管理 ===
+                case "ImportData":       ImportDataDialog(); break;
+                case "MapOps":           OpenSimpleTool("地图操作", "缩放至全图 | 点击地图拖拽平移 | 滚轮缩放 | 右键旋转\n\n使用 ArcGIS Runtime 内置导航控件操作地图"); break;
+                case "SpatialQuery":     OpenSpatialQuery(); break;
+                case "SpatialAnalysis":  OpenGeoTool(module); break;
+                case "Mapping":          OpenThematicMap(); break;
+
+                // === 属性数据管理 ===
+                case "AttributeBrowse":  OpenAttributeTable(); break;
+                case "AttributeQuery":   OpenAttributeQuery(); break;
+                case "AttributeManage":  OpenSimpleTool("属性管理", "属性编辑功能：\n\n• 选择图层后可编辑属性字段值\n• 支持添加/删除字段\n• 支持字段计算器\n\n（高级编辑功能开发中）"); break;
+
+                // === 土壤植被分析 ===
+                case "SoilTypeAnalysis":
+                case "SoilMoisture":
+                case "VegType":
+                case "VegCoverage":
+                case "NDVI":             OpenGeoTool(module); break;
+
+                // === 专题制图 ===
+                case "StatChart":        OpenThematicMap(); break;
+                case "StatTable":        OpenThematicMap(); break;
+                case "ThematicMap":      OpenThematicMap(); break;
+
+                default:                 OpenGeoTool(module); break;
             }
         }
 
-        /// <summary>
-        /// Tag → ModuleInfo 映射。
-        /// </summary>
         private static ModuleInfo? ResolveTool(string tag) => tag switch
         {
-            // 数据管理 — 空间数据管理组
-            "ImportData" => ModuleRegistry.ImportData,
-            "MapOps" => ModuleRegistry.MapOps,
-            "SpatialQuery" => ModuleRegistry.SpatialQuery,
-            "SpatialAnalysis" => ModuleRegistry.SpatialAnalysis,
+            "ImportData" => ModuleRegistry.ImportData, "MapOps" => ModuleRegistry.MapOps,
+            "SpatialQuery" => ModuleRegistry.SpatialQuery, "SpatialAnalysis" => ModuleRegistry.SpatialAnalysis,
             "Mapping" => ModuleRegistry.Mapping,
-            // 数据管理 — 属性数据管理组
-            "AttributeBrowse" => ModuleRegistry.AttributeBrowse,
-            "AttributeQuery" => ModuleRegistry.AttributeQuery,
+            "AttributeBrowse" => ModuleRegistry.AttributeBrowse, "AttributeQuery" => ModuleRegistry.AttributeQuery,
             "AttributeManage" => ModuleRegistry.AttributeManage,
-            // 土壤植被 — 五个核心指标
-            "SoilTypeAnalysis" => ModuleRegistry.SoilTypeAnalysis,
-            "SoilMoisture" => ModuleRegistry.SoilMoisture,
-            "VegType" => ModuleRegistry.VegType,
-            "VegCoverage" => ModuleRegistry.VegCoverage,
-            "NDVI" => ModuleRegistry.NDVI,
-            // 专题制图
-            "MapExport" => ModuleRegistry.MapExport,
-            "LegendSettings" => ModuleRegistry.LegendSettings,
-            "PrintSettings" => ModuleRegistry.PrintSettings,
-            "ReportGen" => ModuleRegistry.ReportGen,
+            "SoilTypeAnalysis" => ModuleRegistry.SoilTypeAnalysis, "SoilMoisture" => ModuleRegistry.SoilMoisture,
+            "VegType" => ModuleRegistry.VegType, "VegCoverage" => ModuleRegistry.VegCoverage, "NDVI" => ModuleRegistry.NDVI,
+            "StatChart" => ModuleRegistry.StatChart, "StatTable" => ModuleRegistry.StatTable,
+            "ThematicMap" => ModuleRegistry.ThematicMap,
             _ => null
         };
 
-        /// <summary>
-        /// 在右侧地理处理面板中打开指定分析工具。
-        /// ArcGIS Pro 风格：所有工具都在地理处理面板内运行，不遮挡地图。
-        /// </summary>
-        private void OpenGeoTool(ModuleInfo module)
+        // ===== 各工具打开方法 =====
+
+        private void ShowGeoPanel(string title)
         {
-            // 1. 显示地理处理面板并置顶
             GeoPanelAnchor.Show();
             GeoPanelAnchor.IsActive = true;
             GeoPanelAnchor.IsSelected = true;
-
-            // 2. 更新面板标题
-            GeoPanelAnchor.Title = $"地理处理 — {module.Name}";
-
-            // 3. 创建/更新工具视图（清除专题图视图）
-            if (_themeToolView != null)
-            {
-                GeoPanelContent.Content = null;
-                _themeToolView = null;
-            }
-
-            if (_geoToolView == null)
-            {
-                _geoToolView = new GeoProcessToolView();
-                _geoToolView.SetLayerService(_mapLayerService);
-                GeoPanelContent.Content = _geoToolView;
-            }
-            _geoToolView.LoadTool(module);
-            _geoToolView.RefreshLayerList();
-
-            RecordOperation($"打开工具: {module.Name}");
+            GeoPanelAnchor.Title = title;
         }
 
-        /// <summary>
-        /// 打开专题制图工具（地图输出/图例设置/报表生成）
-        /// </summary>
-        private void OpenThematicTool(ModuleInfo module, string tag)
+        private void ClearPanelContent()
         {
-            GeoPanelAnchor.Show();
-            GeoPanelAnchor.IsActive = true;
-            GeoPanelAnchor.IsSelected = true;
-            GeoPanelAnchor.Title = $"专题制图 — {module.Name}";
+            _geoToolView = null; _themeToolView = null;
+            _attrTableView = null; _attrQueryView = null; _spatialQueryView = null;
+            GeoPanelContent.Content = null;
+        }
 
-            // 清除分析工具视图
-            if (_geoToolView != null)
+        /// <summary>导入数据：打开文件对话框，选择文件添加到地图</summary>
+        private async void ImportDataDialog()
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
             {
-                GeoPanelContent.Content = null;
-                _geoToolView = null;
-            }
+                Title = "选择要导入的空间数据文件",
+                Filter = "Shapefile|*.shp|GeoTIFF|*.tif;*.tiff|所有文件|*.*",
+                Multiselect = true
+            };
+            if (dlg.ShowDialog() != true) return;
 
-            if (_themeToolView == null)
+            foreach (var file in dlg.FileNames)
             {
-                _themeToolView = new ThematicMapToolView();
-                _themeToolView.SetMapView(MapViewControl);
-                GeoPanelContent.Content = _themeToolView;
+                try
+                {
+                    var layer = await _mapLayerService.AddLayerAsync(file);
+                    if (layer != null)
+                    {
+                        RecordOperation($"导入数据: {layer.Name}");
+                        StatusBar1.Text = $"已导入: {layer.Name}";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"导入失败 {Path.GetFileName(file)}:\n{ex.Message}", "错误");
+                }
             }
-            _themeToolView.LoadTool(tag);
+        }
 
+        /// <summary>打开属性浏览视图</summary>
+        private void OpenAttributeTable()
+        {
+            ShowGeoPanel("属性浏览");
+            ClearPanelContent();
+            _attrTableView = new AttributeTableView();
+            _attrTableView.SetLayerService(_mapLayerService);
+            GeoPanelContent.Content = _attrTableView;
+            RecordOperation("打开属性浏览");
+        }
+
+        /// <summary>打开属性查询视图</summary>
+        private void OpenAttributeQuery()
+        {
+            ShowGeoPanel("属性查询");
+            ClearPanelContent();
+            _attrQueryView = new AttributeQueryView();
+            _attrQueryView.SetLayerService(_mapLayerService);
+            GeoPanelContent.Content = _attrQueryView;
+            RecordOperation("打开属性查询");
+        }
+
+        /// <summary>打开空间查询视图</summary>
+        private void OpenSpatialQuery()
+        {
+            ShowGeoPanel("空间查询");
+            ClearPanelContent();
+            _spatialQueryView = new SpatialQueryView();
+            _spatialQueryView.SetLayerService(_mapLayerService);
+            GeoPanelContent.Content = _spatialQueryView;
+            RecordOperation("打开空间查询");
+        }
+
+        /// <summary>简单信息工具（地图操作/属性管理）</summary>
+        private void OpenSimpleTool(string title, string message)
+        {
+            ShowGeoPanel(title);
+            ClearPanelContent();
+            var tb = new TextBlock
+            {
+                Text = message,
+                FontSize = 11,
+                Foreground = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromRgb(0x55, 0x55, 0x55)),
+                TextWrapping = System.Windows.TextWrapping.Wrap,
+                Margin = new System.Windows.Thickness(8)
+            };
+            GeoPanelContent.Content = tb;
+            RecordOperation($"打开工具: {title}");
+        }
+
+        /// <summary>打开专题制图视图</summary>
+        private void OpenThematicMap()
+        {
+            ShowGeoPanel("专题制图");
+            ClearPanelContent();
+            _themeToolView = new ThematicMapToolView();
+            _themeToolView.SetMapView(MapViewControl);
+            GeoPanelContent.Content = _themeToolView;
+            _themeToolView.LoadTool("ThematicMap");
+            RecordOperation("打开专题制图");
+        }
+
+        /// <summary>打开地理分析工具</summary>
+        private void OpenGeoTool(ModuleInfo module)
+        {
+            ShowGeoPanel($"地理处理 — {module.Name}");
+            ClearPanelContent();
+            _geoToolView = new GeoProcessToolView();
+            _geoToolView.SetLayerService(_mapLayerService);
+            GeoPanelContent.Content = _geoToolView;
+            _geoToolView.LoadTool(module);
+            _geoToolView.RefreshLayerList();
             RecordOperation($"打开工具: {module.Name}");
         }
 

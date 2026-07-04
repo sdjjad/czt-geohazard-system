@@ -35,4 +35,8 @@
     </Content>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="系统界面图\" />
+  </ItemGroup>
+
 </Project>

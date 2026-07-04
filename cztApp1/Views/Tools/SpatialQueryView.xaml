@@ -1,0 +1,41 @@
+<UserControl x:Class="cztApp1.Views.Tools.SpatialQueryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="Transparent" FontFamily="Microsoft YaHei UI">
+    <Grid Margin="4,2">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/><RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="🗺 空间查询" FontSize="11" FontWeight="SemiBold" Foreground="#333" Margin="0,2,0,4"/>
+
+        <TextBlock Grid.Row="1" Text="目标图层:" FontSize="10" Foreground="#555" Margin="0,0,0,2"/>
+        <ComboBox Grid.Row="2" x:Name="TargetLayerCombo" Height="24" FontSize="10" Margin="0,0,0,4"/>
+
+        <TextBlock Grid.Row="3" Text="查询方式:" FontSize="10" Foreground="#555" Margin="0,0,0,2"/>
+        <StackPanel Grid.Row="4" Margin="0,0,0,6">
+            <RadioButton x:Name="RbIntersect" Content="与源图层相交 (Intersect)" IsChecked="True" FontSize="10" Margin="0,2"/>
+            <RadioButton x:Name="RbContain" Content="完全包含于 (Within)" FontSize="10" Margin="0,2"/>
+            <RadioButton x:Name="RbNear" Content="邻近 (Near)" FontSize="10" Margin="0,2"/>
+            <Grid Margin="0,2">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <TextBlock Text="源图层:" FontSize="10" Foreground="#555" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <ComboBox Grid.Column="1" x:Name="SourceLayerCombo" Height="24" FontSize="10"/>
+            </Grid>
+        </StackPanel>
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,6,0,4">
+            <Button Content="🔍 执行空间查询" Width="100" Height="26" FontSize="10"
+                    Background="#1565C0" Foreground="White" BorderThickness="0" Cursor="Hand" Click="RunSpatialQuery_Click"/>
+            <TextBlock x:Name="SpatialResultText" Text="" FontSize="9" Foreground="#43A047"
+                       VerticalAlignment="Center" Margin="10,0,0,0"/>
+        </StackPanel>
+
+        <DataGrid Grid.Row="5" x:Name="SpatialResultGrid" AutoGenerateColumns="True"
+                  Background="White" BorderBrush="#E0E0E0" FontSize="10"
+                  IsReadOnly="True" HeadersVisibility="Column" MaxHeight="250"
+                  HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"/>
+    </Grid>
+</UserControl>

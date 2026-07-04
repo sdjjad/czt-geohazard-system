@@ -463,32 +463,26 @@
                         <Border Padding="8,3">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="MapExport">
+                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="StatChart">
                                         <StackPanel>
-                                            <Image Source="/Resources/print.png" Width="22" Height="22" Stretch="Uniform"/>
-                                            <TextBlock Text="地图输出" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
+                                            <Image Source="/Resources/combo-chart.png" Width="22" Height="22" Stretch="Uniform"/>
+                                            <TextBlock Text="统计图" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
-                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="LegendSettings">
+                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="StatTable">
                                         <StackPanel>
-                                            <Image Source="/Resources/book.png" Width="22" Height="22" Stretch="Uniform"/>
-                                            <TextBlock Text="图例设置" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
+                                            <Image Source="/Resources/table.png" Width="22" Height="22" Stretch="Uniform"/>
+                                            <TextBlock Text="统计表" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
-                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="PrintSettings">
+                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="ThematicMap">
                                         <StackPanel>
-                                            <Image Source="/Resources/settings.png" Width="22" Height="22" Stretch="Uniform"/>
-                                            <TextBlock Text="打印设置" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="ReportGen">
-                                        <StackPanel>
-                                            <Image Source="/Resources/document.png" Width="22" Height="22" Stretch="Uniform"/>
-                                            <TextBlock Text="报表生成" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
+                                            <Image Source="/Resources/edit.png" Width="22" Height="22" Stretch="Uniform"/>
+                                            <TextBlock Text="专题图" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
                                 </StackPanel>
-                                <TextBlock Style="{StaticResource GrpLbl}" Text="专题制图"/>
+                                <TextBlock Style="{StaticResource GrpLbl}" Text="成果输出"/>
                             </StackPanel>
                         </Border>
                     </WrapPanel>

@@ -26,20 +26,28 @@ namespace cztApp1.Views
         }
 
         /// <summary>
-        /// 加载工具（设置默认标题等）
+        /// 加载工具（根据toolName预设标题和模式）
         /// </summary>
         public void LoadTool(string toolName)
         {
             _lastOutputPath = null;
             StatusBorder.Visibility = Visibility.Collapsed;
 
-            // 根据工具名预设标题
-            if (toolName.Contains("输出"))
-                MapTitle.Text = "长株潭地质灾害分布图";
-            else if (toolName.Contains("图例"))
-                MapSubtitle.Text = "图例设置";
-            else if (toolName.Contains("报表"))
-                MapSubtitle.Text = "统计报表";
+            if (toolName == "StatChart")
+            {
+                MapTitle.Text = "地质灾害统计图";
+                MapSubtitle.Text = "柱状图 / CF分布图 / 饼图 / 综合图";
+            }
+            else if (toolName == "StatTable")
+            {
+                MapTitle.Text = "地质灾害统计表";
+                MapSubtitle.Text = "CSV统计表 / CF分级汇总 / 元数据";
+            }
+            else // ThematicMap or fallback
+            {
+                MapTitle.Text = "长株潭地质灾害专题图";
+                MapSubtitle.Text = "土壤植被指标分析";
+            }
         }
 
         #region 事件处理
