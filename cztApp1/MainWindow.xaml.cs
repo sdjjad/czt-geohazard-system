@@ -1154,9 +1154,11 @@ namespace cztApp1
             if (_geoToolView == null)
             {
                 _geoToolView = new GeoProcessToolView();
+                _geoToolView.SetLayerService(_mapLayerService);
                 GeoPanelContent.Content = _geoToolView;
             }
             _geoToolView.LoadTool(module);
+            _geoToolView.RefreshLayerList();
 
             RecordOperation($"打开工具: {module.Name}");
         }

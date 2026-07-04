@@ -35,33 +35,14 @@ namespace cztApp1.Views
 
         private void RunAnalysis_Click(object sender, RoutedEventArgs e)
         {
-            var config = new AnalysisConfig
-            {
-                ModuleName = _module.Name,
-                DataSource = (DataSource.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "",
-                DataRange = (DataRange.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "",
-                DataTime = (DataTime.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "",
-                ModelMethod = (ModelMethod.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "CF值法",
-                OutputFolder = OutputFolder.Text,
-                Parameters = _params.Where(p => p.Classes.Count == 0 || true).ToList()
-            };
-
-            _lastResults = _service.RunAnalysis(config, msg =>
-            {
-                Dispatcher.Invoke(() => ResultGrid.ItemsSource = new ObservableCollection<StatResult>());
-            });
-
-            ResultGrid.ItemsSource = new ObservableCollection<StatResult>(_lastResults);
-            MessageBox.Show($"{_module.Name} 分析完成，共 {_lastResults.Count} 条结果", "完成",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("请使用地理处理面板进行分析。\n\n点击功能区 → 土壤植被 → 任一指标按钮，\n在地理处理面板中选择已加载的图层后运行分析。",
+                "功能已迁移", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void SaveResults_Click(object sender, RoutedEventArgs e)
         {
-            if (_lastResults == null) return;
-            _service.SaveResults(OutputFolder.Text, _module.Name, _lastResults);
-            MessageBox.Show($"结果已保存至:\n{OutputFolder.Text}", "保存成功",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("请使用地理处理面板保存结果。",
+                "功能已迁移", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void BrowseFolder_Click(object sender, RoutedEventArgs e)
