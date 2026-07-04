@@ -28,6 +28,7 @@
                 <ResourceDictionary Source="Styles/ButtonStyles.xaml"/>
                 <ResourceDictionary Source="Styles/TabStyles.xaml"/>
                 <ResourceDictionary Source="Styles/PanelStyles.xaml"/>
+                <ResourceDictionary Source="Styles/RibbonIcons.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
             <Style x:Key="CaptionBtn" TargetType="Button">

@@ -4,12 +4,7 @@
              xmlns:local="clr-namespace:cztApp1"
              xmlns:views="clr-namespace:cztApp1.Views">
     <Application.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="Styles/RibbonIcons.xaml"/>
-            </ResourceDictionary.MergedDictionaries>
-            <views:CountToIndexConverter x:Key="CountToIndexConverter"/>
-            <views:CfToRiskConverter x:Key="CfToRiskConverter"/>
-        </ResourceDictionary>
+        <views:CountToIndexConverter x:Key="CountToIndexConverter"/>
+        <views:CfToRiskConverter x:Key="CfToRiskConverter"/>
     </Application.Resources>
 </Application>

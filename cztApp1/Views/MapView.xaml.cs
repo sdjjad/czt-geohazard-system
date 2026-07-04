@@ -44,7 +44,8 @@ public partial class MapView : UserControl
             _map.OperationalLayers.Add(layer);
             _layerLookup[layerId] = layer;
 
-            await EsriMapView.SetViewpointGeometryAsync(layer.FullExtent);
+            if (layer.FullExtent != null)
+                await EsriMapView.SetViewpointGeometryAsync(layer.FullExtent);
         }
         catch (Exception ex)
         {
@@ -67,6 +68,7 @@ public partial class MapView : UserControl
             _layerLookup[layerId] = layer;
 
             if (layer.FullExtent != null)
+                if (layer.FullExtent != null)
                 await EsriMapView.SetViewpointGeometryAsync(layer.FullExtent);
         }
         catch (Exception ex)

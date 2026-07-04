@@ -18,7 +18,6 @@ namespace cztApp1.Views
         private MapLayerService? _layerService;
         private ModuleInfo _module = null!;
         private List<StatResult>? _lastResults;
-        private string? _lastSavedBasePath;
 
         private static readonly Color[] BarColors =
         {
@@ -44,7 +43,6 @@ namespace cztApp1.Views
         {
             _module = module;
             _lastResults = null;
-            _lastSavedBasePath = null;
             ResultGrid.ItemsSource = null;
             ChartContainer.Visibility = Visibility.Collapsed;
             CfSummaryContainer.Visibility = Visibility.Collapsed;
