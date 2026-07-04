@@ -175,17 +175,20 @@ namespace cztApp1.Services
             AnalysisConfig config,
             ClassificationMethod classMethod = ClassificationMethod.None,
             int classCount = 5,
-            Action<string>? progress = null)
+            Action<string>? progress = null,
+            Action<int>? progressPct = null)
         {
             var results = new List<StatResult>();
 
             progress?.Invoke("正在读取分类图层...");
+            progressPct?.Invoke(5);
             var classTable = await ShapefileFeatureTable.OpenAsync(classLayer.FilePath);
             var classFeatures = await classTable.QueryFeaturesAsync(new QueryParameters { WhereClause = "1=1" });
             int featureCount = classFeatures.Count();
             if (featureCount == 0) { progress?.Invoke("分类图层无要素"); return results; }
 
             progress?.Invoke("正在读取灾害点图层...");
+            progressPct?.Invoke(10);
             var hazardTable = await ShapefileFeatureTable.OpenAsync(hazardLayer.FilePath);
             var hazardFeatures = await hazardTable.QueryFeaturesAsync(new QueryParameters { WhereClause = "1=1" });
             var hazardList = hazardFeatures.ToList();
@@ -244,7 +247,10 @@ namespace cztApp1.Services
             {
                 processed++;
                 if (processed % 20 == 0)
+                {
                     progress?.Invoke($"空间叠加中: {processed}/{featureCount}");
+                    progressPct?.Invoke(20 + (int)(60.0 * processed / featureCount));
+                }
                 if (cf.Geometry == null) continue;
 
                 string className = "其他";
@@ -305,6 +311,7 @@ namespace cztApp1.Services
 
             double PPs = totalStudyAreaKm2 > 0 ? totalHazardAreaKm2 / totalStudyAreaKm2 : 0;
             progress?.Invoke("计算CF值中...");
+            progressPct?.Invoke(85);
 
             string paramName = config.Parameters.FirstOrDefault()?.Name ?? config.ModuleName;
 
@@ -339,6 +346,7 @@ namespace cztApp1.Services
 
             results = results.OrderByDescending(r => r.CF).ToList();
             progress?.Invoke($"分析完成: {results.Count} 个分类");
+            progressPct?.Invoke(100);
             return results;
         }
 

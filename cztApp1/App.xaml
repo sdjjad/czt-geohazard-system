@@ -4,7 +4,12 @@
              xmlns:local="clr-namespace:cztApp1"
              xmlns:views="clr-namespace:cztApp1.Views">
     <Application.Resources>
-        <views:CountToIndexConverter x:Key="CountToIndexConverter"/>
-        <views:CfToRiskConverter x:Key="CfToRiskConverter"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Styles/ControlStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <views:CountToIndexConverter x:Key="CountToIndexConverter"/>
+            <views:CfToRiskConverter x:Key="CfToRiskConverter"/>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

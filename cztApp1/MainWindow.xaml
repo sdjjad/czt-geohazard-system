@@ -28,7 +28,6 @@
                 <ResourceDictionary Source="Styles/ButtonStyles.xaml"/>
                 <ResourceDictionary Source="Styles/TabStyles.xaml"/>
                 <ResourceDictionary Source="Styles/PanelStyles.xaml"/>
-                <ResourceDictionary Source="Styles/ControlStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
             <Style x:Key="CaptionBtn" TargetType="Button">
@@ -56,50 +55,63 @@
                 </Style.Triggers>
             </Style>
 
-            <!-- 下拉菜单样式：纯白 -->
+            <!-- 右键菜单统一样式 -->
             <Style TargetType="ContextMenu">
                 <Setter Property="Background" Value="White"/>
-                <Setter Property="Foreground" Value="#1A1A1A"/>
-                <Setter Property="BorderBrush" Value="#C0C0C0"/>
+                <Setter Property="BorderBrush" Value="#C8C8C8"/>
                 <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="Padding" Value="0"/>
+                <Setter Property="Padding" Value="2"/>
                 <Setter Property="HasDropShadow" Value="False"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="ContextMenu">
-                            <Border Background="White" BorderBrush="#C0C0C0"
-                                    BorderThickness="1" CornerRadius="3" Padding="2">
-                                <StackPanel IsItemsHost="True" Background="White"/>
+                            <Border Background="White" BorderBrush="#C8C8C8"
+                                    BorderThickness="1" CornerRadius="4" Padding="2">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#20000000" BlurRadius="8" ShadowDepth="2" Opacity="0.25"/>
+                                </Border.Effect>
+                                <StackPanel IsItemsHost="True"/>
                             </Border>
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
             </Style>
             <Style TargetType="MenuItem">
-                <Setter Property="Background" Value="White"/>
+                <Setter Property="Background" Value="Transparent"/>
                 <Setter Property="Foreground" Value="#1A1A1A"/>
-                <Setter Property="Padding" Value="10,6"/>
+                <Setter Property="Padding" Value="10,5"/>
+                <Setter Property="FontSize" Value="12"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="MenuItem">
-                            <Border x:Name="bd" Background="White"
+                            <Border x:Name="bd" Background="Transparent" CornerRadius="2"
                                     Padding="{TemplateBinding Padding}">
-                                <TextBlock Text="{TemplateBinding Header}"
-                                           Foreground="#1A1A1A" FontSize="12"
-                                           VerticalAlignment="Center"/>
+                                <TextBlock Text="{TemplateBinding Header}" Foreground="#1A1A1A"
+                                           FontSize="12" VerticalAlignment="Center"/>
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="bd" Property="Background" Value="#F0F0F0"/>
+                                    <Setter TargetName="bd" Property="Background" Value="#E8F0F8"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Foreground" Value="#999999"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
             </Style>
-            <!-- 去掉 MenuItem 左侧 Icon 列 -->
-            <Style TargetType="Menu">
-                <Setter Property="Background" Value="White"/>
+            <Style TargetType="Separator">
+                <Setter Property="Height" Value="1"/>
+                <Setter Property="Background" Value="#E0E0E0"/>
+                <Setter Property="Margin" Value="8,3"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Separator">
+                            <Border Background="#E0E0E0" Height="1" Margin="8,3"/>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
             </Style>
 
             <Style x:Key="CloseBtn" TargetType="Button" BasedOn="{StaticResource CaptionBtn}">

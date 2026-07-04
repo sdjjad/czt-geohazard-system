@@ -126,8 +126,13 @@
 
             <!-- 8. 进度 -->
             <TextBlock Grid.Row="8" x:Name="ProgressText" Text=""
-                       FontSize="10" Foreground="#1565C0" Margin="0,0,0,4"
+                       FontSize="10" Foreground="#1565C0" Margin="0,0,0,2"
                        Visibility="Collapsed" TextWrapping="Wrap"/>
+            <ProgressBar Grid.Row="8" x:Name="ProgressBar" Height="4" Margin="0,0,0,6"
+                         Minimum="0" Maximum="100" Value="0"
+                         Visibility="Collapsed"
+                         Foreground="#1565C0" Background="#E0E0E0"
+                         BorderThickness="0"/>
 
             <!-- 9. 结果 -->
             <Border Grid.Row="9" Background="#FAFAFA" CornerRadius="4" Margin="0,2,0,0" Padding="4">

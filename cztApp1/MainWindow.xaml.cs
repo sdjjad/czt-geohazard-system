@@ -363,7 +363,7 @@ namespace cztApp1
             // 属性浏览（仅矢量图层）
             if (layer.Type == SpatialDataType.Vector)
             {
-                var browse = new MenuItem { Header = "📋 属性浏览" };
+                var browse = new MenuItem { Header = "属性浏览" };
                 browse.Click += (_, _) => OpenAttributeTableForFile(layer.FilePath);
                 ctx.Items.Add(browse);
             }
@@ -1153,7 +1153,7 @@ namespace cztApp1
             // 属性浏览（仅对 SHP 矢量数据）
             if (dataType == SpatialDataType.Vector)
             {
-                var browseItem = new MenuItem { Header = "📋 属性浏览" };
+                var browseItem = new MenuItem { Header = "属性浏览" };
                 browseItem.Click += (s, e) => OpenAttributeTableForFile(path);
                 menu.Items.Add(browseItem);
             }
@@ -1509,14 +1509,22 @@ namespace cztApp1
         /// <summary>打开地理分析工具</summary>
         private void OpenGeoTool(ModuleInfo module)
         {
-            ShowGeoPanel($"地理处理 — {module.Name}");
-            ClearPanelContent();
-            _geoToolView = new GeoProcessToolView();
-            _geoToolView.SetLayerService(_mapLayerService);
-            GeoPanelContent.Content = _geoToolView;
-            _geoToolView.LoadTool(module);
-            _geoToolView.RefreshLayerList();
-            RecordOperation($"打开工具: {module.Name}");
+            try
+            {
+                ShowGeoPanel($"地理处理 — {module.Name}");
+                ClearPanelContent();
+                _geoToolView = new GeoProcessToolView();
+                _geoToolView.SetLayerService(_mapLayerService);
+                GeoPanelContent.Content = _geoToolView;
+                _geoToolView.LoadTool(module);
+                _geoToolView.RefreshLayerList();
+                RecordOperation($"打开工具: {module.Name}");
+            }
+            catch (Exception ex)
+            {
+                File.WriteAllText(@"D:\geo_crash.log", ex.ToString());
+                MessageBox.Show($"面板加载失败:\n{ex.Message}\n\n详细信息已写入 D:\\geo_crash.log", "错误");
+            }
         }
 
         #region 统计图/统计表查看器

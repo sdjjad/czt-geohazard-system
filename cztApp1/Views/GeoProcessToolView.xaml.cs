@@ -131,8 +131,15 @@ namespace cztApp1.Views
 
         private async Task RefreshFieldListAsync()
         {
+            try
+            {
+                // 防护：控件可能已被销毁(面板切换)
+                if (!IsLoaded) return;
+            }
+            catch { return; }
+
             ClassFieldCombo.Items.Clear();
-            ClassFieldCombo.Items.Add("（自动检测）");
+            ClassFieldCombo.Items.Add("自动检测");
 
             var layer = GetSelectedVectorLayer(ClassLayerCombo);
             if (layer == null) { ClassFieldCombo.SelectedIndex = 0; return; }
@@ -140,10 +147,12 @@ namespace cztApp1.Views
             try
             {
                 var table = await Esri.ArcGISRuntime.Data.ShapefileFeatureTable.OpenAsync(layer.FilePath);
+                // await之后再次检查控件是否还活着
+                try { if (!IsLoaded) return; } catch { return; }
+
                 var fields = table.Fields;
                 foreach (var f in fields)
                 {
-                    // 实时识别所有可用字段类型：文本、整数、浮点、日期等
                     var ft = f.FieldType;
                     if (ft == Esri.ArcGISRuntime.Data.FieldType.Text ||
                         ft == Esri.ArcGISRuntime.Data.FieldType.Int16 ||
@@ -158,7 +167,7 @@ namespace cztApp1.Views
                 }
             }
             catch { }
-            ClassFieldCombo.SelectedIndex = 0;
+            try { ClassFieldCombo.SelectedIndex = 0; } catch { }
         }
 
         #region 事件
@@ -222,7 +231,9 @@ namespace cztApp1.Views
 
             ButtonBar.IsEnabled = false;
             ProgressText.Visibility = Visibility.Visible;
-            ProgressText.Text = "⏳ 正在读取数据...";
+            ProgressBar.Visibility = Visibility.Visible;
+            ProgressBar.Value = 0;
+            ProgressText.Text = "正在读取数据...";
             ResultGrid.ItemsSource = null;
 
             try
@@ -230,7 +241,8 @@ namespace cztApp1.Views
                 _lastResults = await _service.RunAnalysisAsync(
                     classLayer, hazardLayer, classField, config,
                     classMethod, classCount,
-                    msg => Dispatcher.Invoke(() => ProgressText.Text = $"⏳ {msg}"));
+                    msg => Dispatcher.Invoke(() => ProgressText.Text = msg),
+                    pct => Dispatcher.Invoke(() => ProgressBar.Value = pct));
 
                 if (_lastResults.Count == 0)
                 {
@@ -253,6 +265,7 @@ namespace cztApp1.Views
             finally
             {
                 ButtonBar.IsEnabled = true;
+                ProgressBar.Visibility = Visibility.Collapsed;
             }
         }
 

@@ -9,6 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="系统界面图\**" />
+    <EmbeddedResource Remove="系统界面图\**" />
+    <None Remove="系统界面图\**" />
+    <Page Remove="系统界面图\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <RuntimeHostConfigurationOption Include="Switch.System.Windows.Media.TextFormatting.EnableColorEmoji" Value="true" />
   </ItemGroup>
 
@@ -34,10 +41,6 @@
     <Content Include="Resources\leaflet.css">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="系统界面图\" />
   </ItemGroup>
 
 </Project>
