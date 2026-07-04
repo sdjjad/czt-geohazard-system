@@ -18,6 +18,7 @@ namespace cztApp1.Views
         private MapLayerService? _layerService;
         private ModuleInfo _module = null!;
         private List<StatResult>? _lastResults;
+        private bool _suppressEvents;
 
         private static readonly Color[] BarColors =
         {
@@ -77,6 +78,8 @@ namespace cztApp1.Views
         {
             if (_layerService == null) return;
 
+            _suppressEvents = true;
+
             int prevClassIdx = ClassLayerCombo.SelectedIndex;
             int prevHazardIdx = HazardLayerCombo.SelectedIndex;
 
@@ -91,7 +94,6 @@ namespace cztApp1.Views
                 if (layer.Type == SpatialDataType.Vector)
                 {
                     string label = $"{layer.Name} [{layer.FilePath}]";
-                    // 面图层添加到分类列表，点图层添加到灾害列表
                     ClassLayerCombo.Items.Add(label);
                     HazardLayerCombo.Items.Add(label);
                 }
@@ -106,6 +108,8 @@ namespace cztApp1.Views
                 HazardLayerCombo.SelectedIndex = prevHazardIdx;
             else
                 HazardLayerCombo.SelectedIndex = 0;
+
+            _suppressEvents = false;
         }
 
         /// <summary>从ComboBox获取实际选中的矢量图层（跳过占位符和栅格图层索引偏差）</summary>
@@ -120,7 +124,8 @@ namespace cztApp1.Views
 
         private void LayerCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // 当分类图层切换时，实时检测可用字段
+            if (_suppressEvents) return;
+            // 用户手动切换图层时才加载字段，避免RefreshLayerList时自动触发
             _ = RefreshFieldListAsync();
         }
 
