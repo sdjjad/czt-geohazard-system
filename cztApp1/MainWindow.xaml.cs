@@ -904,7 +904,7 @@ namespace cztApp1
 
             try
             {
-                var generated = await AttributeTableGenerator.GenerateAllAsync(
+                var (generated, cleaned) = await AttributeTableGenerator.GenerateAllAsync(
                     _spatialDataPath, _attributeDataPath,
                     (current, total, msg) =>
                     {
@@ -912,8 +912,9 @@ namespace cztApp1
                             StatusBar1.Text = $"⏳ 生成属性表: {current}/{total} — {msg}");
                     });
 
-                StatusBar1.Text = $"✅ 已生成 {generated.Count} 个属性表到: {_attributeDataPath}";
-                MessageBox.Show($"完成！已生成 {generated.Count} 个属性表。\n\n输出目录:\n{_attributeDataPath}",
+                string cleanMsg = cleaned > 0 ? $"，清理了 {cleaned} 个孤儿文件" : "";
+                StatusBar1.Text = $"✅ 已生成 {generated.Count} 个属性表{cleanMsg}";
+                MessageBox.Show($"完成！\n• 生成 {generated.Count} 个属性表\n• 清理 {cleaned} 个孤儿文件\n\n输出目录:\n{_attributeDataPath}",
                     "属性表生成完成", MessageBoxButton.OK, MessageBoxImage.Information);
 
                 // 切换到属性数据视图
