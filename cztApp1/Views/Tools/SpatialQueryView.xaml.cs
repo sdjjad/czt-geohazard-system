@@ -15,6 +15,17 @@ namespace cztApp1.Views.Tools
         public SpatialQueryView() => InitializeComponent();
         public void SetLayerService(MapLayerService s) { _layerService = s; Refresh(); }
 
+        private void Refresh_Click(object sender, RoutedEventArgs e)
+        {
+            int prevT = TargetLayerCombo.SelectedIndex;
+            int prevS = SourceLayerCombo.SelectedIndex;
+            Refresh();
+            if (prevT > 0 && prevT < TargetLayerCombo.Items.Count)
+                TargetLayerCombo.SelectedIndex = prevT;
+            if (prevS > 0 && prevS < SourceLayerCombo.Items.Count)
+                SourceLayerCombo.SelectedIndex = prevS;
+        }
+
         public void Refresh()
         {
             TargetLayerCombo.Items.Clear(); SourceLayerCombo.Items.Clear();

@@ -13,9 +13,15 @@
         <TextBlock Grid.Row="0" Text="🔍 属性查询" FontSize="11" FontWeight="SemiBold" Foreground="#333" Margin="0,2,0,4"/>
 
         <Grid Grid.Row="1" Margin="0,0,0,4">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
             <TextBlock Text="图层:" FontSize="10" Foreground="#555" VerticalAlignment="Center" Margin="0,0,4,0"/>
             <ComboBox Grid.Column="1" x:Name="LayerCombo" Height="24" FontSize="10" SelectionChanged="LayerCombo_Changed"/>
+            <Button Grid.Column="2" Content="🔄" Width="28" Height="24" FontSize="11"
+                    Click="Refresh_Click" Background="#E8E8E8" BorderThickness="0"
+                    Cursor="Hand" Margin="4,0,0,0" ToolTip="刷新图层列表"/>
         </Grid>
 
         <Grid Grid.Row="2" Margin="0,0,0,4">

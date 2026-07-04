@@ -26,6 +26,14 @@ namespace cztApp1.Views.Tools
             LayerCombo.SelectedIndex = 0;
         }
 
+        private void Refresh_Click(object sender, RoutedEventArgs e)
+        {
+            int prevIdx = LayerCombo.SelectedIndex;
+            Refresh();
+            if (prevIdx > 0 && prevIdx < LayerCombo.Items.Count)
+                LayerCombo.SelectedIndex = prevIdx;
+        }
+
         private async void LayerCombo_Changed(object sender, SelectionChangedEventArgs e)
         {
             FieldCombo.Items.Clear();

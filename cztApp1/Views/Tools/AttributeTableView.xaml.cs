@@ -35,6 +35,34 @@ namespace cztApp1.Views.Tools
             LayerCombo.SelectedIndex = 0;
         }
 
+        /// <summary>
+        /// 根据文件路径自动选中图层并加载属性表（供右键菜单调用）
+        /// </summary>
+        public void SelectLayerByFilePath(string filePath)
+        {
+            if (_layerService == null) return;
+            for (int i = 0; i < LayerCombo.Items.Count; i++)
+            {
+                var item = LayerCombo.Items[i]?.ToString() ?? "";
+                if (item.Contains(filePath))
+                {
+                    LayerCombo.SelectedIndex = i;
+                    return;
+                }
+            }
+            // 如果图层尚未加载到地图，刷新列表后再尝试
+            RefreshLayerList();
+            for (int i = 0; i < LayerCombo.Items.Count; i++)
+            {
+                var item = LayerCombo.Items[i]?.ToString() ?? "";
+                if (item.Contains(filePath))
+                {
+                    LayerCombo.SelectedIndex = i;
+                    return;
+                }
+            }
+        }
+
         private async void LayerCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             int idx = LayerCombo.SelectedIndex - 1;
@@ -77,7 +105,16 @@ namespace cztApp1.Views.Tools
             }
         }
 
-        private void Refresh_Click(object sender, RoutedEventArgs e) => RefreshLayerList();
+        private void Refresh_Click(object sender, RoutedEventArgs e)
+        {
+            int prevIdx = LayerCombo.SelectedIndex;
+            RefreshLayerList();
+            // 恢复选中并重读数据
+            if (prevIdx > 0 && prevIdx < LayerCombo.Items.Count)
+                LayerCombo.SelectedIndex = prevIdx;
+            else if (LayerCombo.Items.Count > 1)
+                LayerCombo.SelectedIndex = 0;
+        }
 
         private void CopySelected_Click(object sender, RoutedEventArgs e)
         {

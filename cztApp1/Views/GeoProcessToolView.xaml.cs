@@ -249,6 +249,14 @@ namespace cztApp1.Views
                 MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
+        private async void Refresh_Click(object sender, RoutedEventArgs e)
+        {
+            RefreshLayerList();
+            await RefreshFieldListAsync();
+            ProgressText.Text = "✅ 图层列表和字段已刷新";
+            ProgressText.Visibility = Visibility.Visible;
+        }
+
         private void BrowseFolder_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new OpenFolderDialog { Title = "选择输出目录" };

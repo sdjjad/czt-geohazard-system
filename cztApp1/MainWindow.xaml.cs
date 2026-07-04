@@ -328,6 +328,7 @@ namespace cztApp1
             zoom.Click += async (_, _) => await _mapLayerService.ZoomToLayerAsync(layer);
             var symb = new MenuItem { Header = "符号系统" };
             symb.Click += (_, _) => ShowSymbolEditor(layer);
+
             var up = new MenuItem { Header = "上移" };
             up.Click += (_, _) => _mapLayerService.MoveLayerUp(layer);
             var down = new MenuItem { Header = "下移" };
@@ -340,6 +341,15 @@ namespace cztApp1
             };
             ctx.Items.Add(zoom);
             ctx.Items.Add(symb);
+
+            // 属性浏览（仅矢量图层）
+            if (layer.Type == SpatialDataType.Vector)
+            {
+                var browse = new MenuItem { Header = "📋 属性浏览" };
+                browse.Click += (_, _) => OpenAttributeTableForFile(layer.FilePath);
+                ctx.Items.Add(browse);
+            }
+
             ctx.Items.Add(new Separator());
             ctx.Items.Add(up);
             ctx.Items.Add(down);
@@ -1054,6 +1064,14 @@ namespace cztApp1
 
             menu.Items.Add(new Separator());
 
+            // 属性浏览（仅对 SHP 矢量数据）
+            if (dataType == SpatialDataType.Vector)
+            {
+                var browseItem = new MenuItem { Header = "📋 属性浏览" };
+                browseItem.Click += (s, e) => OpenAttributeTableForFile(path);
+                menu.Items.Add(browseItem);
+            }
+
             var propsItem = new MenuItem { Header = "属性" };
             propsItem.Click += (s, e) =>
             {
@@ -1275,6 +1293,45 @@ namespace cztApp1
             _attrTableView.SetLayerService(_mapLayerService);
             GeoPanelContent.Content = _attrTableView;
             RecordOperation("打开属性浏览");
+        }
+
+        /// <summary>
+        /// 右键菜单调用：自动加载图层并打开属性浏览，选中指定文件
+        /// </summary>
+        private async void OpenAttributeTableForFile(string filePath)
+        {
+            // 确保图层已加载到地图
+            var layer = _mapLayerService.Layers.FirstOrDefault(l => l.FilePath == filePath);
+            if (layer == null)
+            {
+                // 自动加载图层
+                try
+                {
+                    layer = await _mapLayerService.AddLayerAsync(filePath);
+                    if (layer != null)
+                        StatusBar1.Text = $"已加载: {layer.Name}";
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"加载图层失败:\n{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+            }
+
+            // 打开属性浏览面板
+            ShowGeoPanel("属性浏览");
+            ClearPanelContent();
+            _attrTableView = new AttributeTableView();
+            _attrTableView.SetLayerService(_mapLayerService);
+            GeoPanelContent.Content = _attrTableView;
+
+            // 自动选中该图层（延迟等 ComboBox 初始化完成）
+            _ = Dispatcher.BeginInvoke(new Action(() =>
+            {
+                _attrTableView?.SelectLayerByFilePath(filePath);
+            }), System.Windows.Threading.DispatcherPriority.Loaded);
+
+            RecordOperation($"属性浏览: {Path.GetFileName(filePath)}");
         }
 
         /// <summary>打开属性查询视图</summary>
