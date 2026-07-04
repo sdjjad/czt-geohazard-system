@@ -279,8 +279,9 @@ namespace cztApp1.Views
 
         private void ClassMethod_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // 当选择分类方法时，开启/禁用分类数选择
-            bool enabled = ClassMethod.SelectedIndex > 0; // 0 = 不分类
+            // 防护：XAML初始化时ClassCountCombo可能尚未创建
+            if (ClassCountCombo == null) return;
+            bool enabled = ClassMethod.SelectedIndex > 0;
             ClassCountCombo.IsEnabled = enabled;
         }
 
