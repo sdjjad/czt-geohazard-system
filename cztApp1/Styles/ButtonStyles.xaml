@@ -33,34 +33,59 @@
         </Setter>
     </Style>
 
-    <!-- Ribbon button -->
+    <!-- Ribbon button — ArcGIS Pro style -->
     <Style x:Key="RbnBtn" TargetType="Button">
-        <Setter Property="MinWidth" Value="52"/>
-        <Setter Property="Height" Value="50"/>
+        <Setter Property="MinWidth" Value="54"/>
+        <Setter Property="Height" Value="56"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="Padding" Value="6,3"/>
+        <Setter Property="Padding" Value="6,4"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="bd" Background="{TemplateBinding Background}"
-                            BorderThickness="0" Padding="{TemplateBinding Padding}"
-                            CornerRadius="2">
-                        <ContentPresenter HorizontalAlignment="Center"
-                                          VerticalAlignment="Center"/>
+                            BorderBrush="Transparent" BorderThickness="1"
+                            Padding="{TemplateBinding Padding}" CornerRadius="3">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="bd" Property="Background" Value="#F0F0F0"/>
+                            <Setter TargetName="bd" Property="Background" Value="#E8EDF3"/>
+                            <Setter TargetName="bd" Property="BorderBrush" Value="#C8D6E5"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="bd" Property="Background" Value="#E0E0E0"/>
+                            <Setter TargetName="bd" Property="Background" Value="#D0D8E4"/>
+                            <Setter TargetName="bd" Property="BorderBrush" Value="#A0B4CC"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <!-- Ribbon group separator -->
+    <Style x:Key="RbnSeparator" TargetType="Border">
+        <Setter Property="Width" Value="1"/>
+        <Setter Property="Background" Value="#D0D0D0"/>
+        <Setter Property="Margin" Value="4,8"/>
+        <Setter Property="VerticalAlignment" Value="Stretch"/>
+    </Style>
+
+    <!-- Ribbon icon text -->
+    <Style x:Key="RbnIcon" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+        <Setter Property="FontSize" Value="18"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,0,0,2"/>
+    </Style>
+
+    <!-- Ribbon label text -->
+    <Style x:Key="RbnLabel" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="10"/>
+        <Setter Property="Foreground" Value="#333333"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="FontFamily" Value="Microsoft YaHei UI"/>
     </Style>
 
 </ResourceDictionary>

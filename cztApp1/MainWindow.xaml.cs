@@ -1127,7 +1127,7 @@ namespace cztApp1
 
         private static ModuleInfo? ResolveTool(string tag) => tag switch
         {
-            "ImportData" => ModuleRegistry.ImportData, "MapOps" => ModuleRegistry.MapOps,
+            "ImportData" => ModuleRegistry.ImportData,
             "SpatialQuery" => ModuleRegistry.SpatialQuery, "SpatialAnalysis" => ModuleRegistry.SpatialAnalysis,
             "Mapping" => ModuleRegistry.Mapping,
             "AttributeBrowse" => ModuleRegistry.AttributeBrowse, "AttributeQuery" => ModuleRegistry.AttributeQuery,

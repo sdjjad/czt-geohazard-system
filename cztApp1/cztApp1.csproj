@@ -26,7 +26,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Resources\*.png" />
+    <Resource Include="Resources\undo.png" />
+    <Resource Include="Resources\redo.png" />
     <Content Include="Resources\leaflet.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

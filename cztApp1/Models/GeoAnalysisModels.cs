@@ -177,7 +177,6 @@ namespace cztApp1.Models
         // ================================================================
 
         public static readonly ModuleInfo ImportData = new() { Name = "导入数据" };
-        public static readonly ModuleInfo MapOps = new() { Name = "地图操作" };
         public static readonly ModuleInfo SpatialQuery = new() { Name = "空间查询" };
         public static readonly ModuleInfo SpatialAnalysis = new() { Name = "空间分析" };
         public static readonly ModuleInfo Mapping = new() { Name = "制图" };
