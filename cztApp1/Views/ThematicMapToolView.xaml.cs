@@ -10,6 +10,7 @@ namespace cztApp1.Views
     public partial class ThematicMapToolView : UserControl
     {
         private ThematicMapService? _service;
+        private MapLayerService? _layerService;
         private string? _lastOutputPath;
 
         public ThematicMapToolView()
@@ -23,6 +24,33 @@ namespace cztApp1.Views
         public void SetMapView(MapView mapView)
         {
             _service = new ThematicMapService(mapView);
+        }
+
+        /// <summary>设置图层服务引用</summary>
+        public void SetLayerService(MapLayerService layerService)
+        {
+            _layerService = layerService;
+            RefreshLayerList();
+        }
+
+        private void RefreshLayerList()
+        {
+            LayerCombo.Items.Clear();
+            LayerCombo.Items.Add("-- 选择图层 --");
+            if (_layerService == null) { LayerCombo.SelectedIndex = 0; return; }
+            foreach (var l in _layerService.Layers)
+                LayerCombo.Items.Add($"{l.Name} [{Path.GetFileName(l.FilePath)}]");
+            LayerCombo.SelectedIndex = 0;
+        }
+
+        private async void LayerCombo_Changed(object sender, SelectionChangedEventArgs e)
+        {
+            int idx = LayerCombo.SelectedIndex - 1;
+            if (idx < 0 || _layerService == null) return;
+            var layers = _layerService.Layers.ToList();
+            if (idx >= layers.Count) return;
+            // 缩放到选中图层
+            await _layerService.ZoomToLayerAsync(layers[idx]);
         }
 
         /// <summary>

@@ -541,8 +541,67 @@ namespace cztApp1
             }
 
             sp.Children.Add(propGrid);
+
+            // ====== 按字段配色 ======
+            sp.Children.Add(new Border { Height = 1, Background = new SolidColorBrush(Color.FromRgb(0xE0, 0xE0, 0xE0)), Margin = new Thickness(0, 10, 0, 6) });
+            sp.Children.Add(new TextBlock { Text = "🎨 按字段配色", FontSize = 10, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(Color.FromRgb(0x33, 0x33, 0x33)), Margin = new Thickness(0, 0, 0, 4) });
+
+            var fieldCombo = new ComboBox { Height = 24, FontSize = 10, Margin = new Thickness(0, 0, 0, 4) };
+            fieldCombo.Items.Add("-- 选择字段 --");
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var table = await Esri.ArcGISRuntime.Data.ShapefileFeatureTable.OpenAsync(layer.FilePath);
+                    await Dispatcher.InvokeAsync(() =>
+                    {
+                        foreach (var f in table.Fields)
+                            fieldCombo.Items.Add(f.Name);
+                    });
+                }
+                catch { }
+            });
+            sp.Children.Add(fieldCombo);
+
+            // 色带选择
+            var rampNames = new[] { "蓝-白-红", "绿-黄-红", "蓝-青-绿", "紫-蓝-绿-黄-红", "ArcGIS默认" };
+            var rampCombo = new ComboBox { Height = 24, FontSize = 10, Margin = new Thickness(0, 0, 0, 4) };
+            int ri = 0;
+            foreach (var rn in rampNames) { var item = new ComboBoxItem { Content = rn }; if (ri == 0) item.IsSelected = true; rampCombo.Items.Add(item); ri++; }
+            sp.Children.Add(rampCombo);
+
+            var applyBtn = new Button
+            {
+                Content = "▶ 应用配色", Height = 26, FontSize = 10,
+                Background = new SolidColorBrush(Color.FromRgb(0x15, 0x65, 0xC0)),
+                Foreground = Brushes.White, BorderThickness = new Thickness(0),
+                Cursor = Cursors.Hand, Margin = new Thickness(0, 0, 0, 0)
+            };
+            var layerRef = layer;
+            applyBtn.Click += async (_, _) =>
+            {
+                if (fieldCombo.SelectedIndex <= 0) return;
+                string fn = fieldCombo.SelectedItem?.ToString() ?? "";
+                var ramp = GetColorRamp(rampCombo.SelectedIndex);
+                applyBtn.IsEnabled = false;
+                await _mapLayerService.ApplyFieldSymbologyAsync(layerRef, fn, ramp);
+                applyBtn.IsEnabled = true;
+                RecordOperation($"按字段配色: {layerRef.Name} → {fn}");
+            };
+            sp.Children.Add(applyBtn);
+
             SymbolEditorHost.Children.Add(sp);
         }
+
+        // 预设色带
+        private static List<System.Drawing.Color> GetColorRamp(int index) => index switch
+        {
+            1 => new() { System.Drawing.Color.FromArgb(0, 104, 55), System.Drawing.Color.FromArgb(165, 221, 114), System.Drawing.Color.FromArgb(248, 242, 18), System.Drawing.Color.FromArgb(235, 108, 0), System.Drawing.Color.FromArgb(183, 0, 0) },
+            2 => new() { System.Drawing.Color.FromArgb(8, 48, 107), System.Drawing.Color.FromArgb(8, 81, 156), System.Drawing.Color.FromArgb(33, 113, 181), System.Drawing.Color.FromArgb(66, 146, 198), System.Drawing.Color.FromArgb(107, 174, 214), System.Drawing.Color.FromArgb(158, 202, 225), System.Drawing.Color.FromArgb(198, 219, 239), System.Drawing.Color.FromArgb(222, 235, 247) },
+            3 => new() { System.Drawing.Color.FromArgb(84, 39, 136), System.Drawing.Color.FromArgb(38, 109, 185), System.Drawing.Color.FromArgb(0, 150, 98), System.Drawing.Color.FromArgb(182, 209, 0), System.Drawing.Color.FromArgb(208, 28, 0) },
+            4 => new() { System.Drawing.Color.FromArgb(21, 101, 192), System.Drawing.Color.FromArgb(25, 118, 210), System.Drawing.Color.FromArgb(30, 136, 229), System.Drawing.Color.FromArgb(66, 165, 245), System.Drawing.Color.FromArgb(100, 181, 246), System.Drawing.Color.FromArgb(144, 202, 249), System.Drawing.Color.FromArgb(187, 222, 251) },
+            _ => new() { System.Drawing.Color.FromArgb(33, 80, 198), System.Drawing.Color.FromArgb(244, 244, 244), System.Drawing.Color.FromArgb(209, 42, 44) },
+        };
 
         // ========== 栅格符号编辑器 ==========
 
@@ -1415,6 +1474,7 @@ namespace cztApp1
             ClearPanelContent();
             _themeToolView = new ThematicMapToolView();
             _themeToolView.SetMapView(MapViewControl);
+            _themeToolView.SetLayerService(_mapLayerService);
             GeoPanelContent.Content = _themeToolView;
             _themeToolView.LoadTool("ThematicMap");
             RecordOperation("打开专题制图");

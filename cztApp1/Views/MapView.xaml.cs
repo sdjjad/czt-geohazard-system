@@ -133,6 +133,81 @@ public partial class MapView : UserControl
         return Task.CompletedTask;
     }
 
+    public async Task ApplyFieldSymbologyAsync(string layerId, string fieldName, List<System.Drawing.Color> ramp)
+    {
+        if (!_layerLookup.TryGetValue(layerId, out var l) || l is not FeatureLayer fl) return;
+        var table = fl.FeatureTable;
+        if (table == null) return;
+
+        // 获取字段类型并收集唯一值
+        var field = table.Fields.FirstOrDefault(f => f.Name == fieldName);
+        if (field == null) return;
+
+        var features = await table.QueryFeaturesAsync(new Esri.ArcGISRuntime.Data.QueryParameters { WhereClause = "1=1" });
+        var values = new List<object>();
+        foreach (var f in features)
+        {
+            if (f.Attributes.ContainsKey(fieldName))
+                values.Add(f.Attributes[fieldName] ?? DBNull.Value);
+        }
+        var uniqueValues = values.Where(v => v != DBNull.Value).Select(v => v.ToString()).Distinct().OrderBy(v => v).ToList();
+
+        if (uniqueValues.Count <= 1) return;
+
+        // 判断字段类型：数值型用 ClassBreaksRenderer，文本型用 UniqueValueRenderer
+        bool isNumeric = Services.Reclassifier.IsNumericField(field.FieldType);
+
+        if (isNumeric && uniqueValues.Count > 10)
+        {
+            // 数值字段 → 分5级用ClassBreaksRenderer
+            var nums = uniqueValues.Select(v => double.TryParse(v, System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out double d) ? d : double.NaN)
+                .Where(d => !double.IsNaN(d)).ToList();
+            var breaks = Services.Reclassifier.ComputeBreaks(nums, Services.ClassificationMethod.Quantile, Math.Min(5, ramp.Count));
+            var classBreaks = new List<Esri.ArcGISRuntime.Symbology.ClassBreak>();
+            for (int i = 0; i < breaks.Count - 1; i++)
+            {
+                var color = ramp[i % ramp.Count];
+                var sym = GetSymbolForGeometry(table.GeometryType, color);
+                classBreaks.Add(new Esri.ArcGISRuntime.Symbology.ClassBreak(
+                    $"{breaks[i]:F2} - {breaks[i + 1]:F2}",
+                    $"{breaks[i]:F2} - {breaks[i + 1]:F2}",
+                    breaks[i], breaks[i + 1], sym));
+            }
+            fl.Renderer = new Esri.ArcGISRuntime.Symbology.ClassBreaksRenderer(fieldName, classBreaks);
+        }
+        else
+        {
+            // 文本/少量数值 → UniqueValueRenderer
+            var uvInfos = new List<Esri.ArcGISRuntime.Symbology.UniqueValue>();
+            for (int i = 0; i < Math.Min(uniqueValues.Count, ramp.Count * 5); i++)
+            {
+                var color = ramp[i % ramp.Count];
+                var sym = GetSymbolForGeometry(table.GeometryType, color);
+                var val = uniqueValues[i] ?? "";
+                uvInfos.Add(new Esri.ArcGISRuntime.Symbology.UniqueValue(
+                    val, val, sym, new object[] { val }));
+            }
+            // 默认符号
+            var defaultSym = GetSymbolForGeometry(table.GeometryType, System.Drawing.Color.LightGray);
+            fl.Renderer = new Esri.ArcGISRuntime.Symbology.UniqueValueRenderer(new[] { fieldName }, uvInfos, "", defaultSym);
+        }
+    }
+
+    private static Esri.ArcGISRuntime.Symbology.Symbol GetSymbolForGeometry(
+        Esri.ArcGISRuntime.Geometry.GeometryType? geom, System.Drawing.Color color)
+    {
+        return geom switch
+        {
+            Esri.ArcGISRuntime.Geometry.GeometryType.Point => new Esri.ArcGISRuntime.Symbology.SimpleMarkerSymbol
+            { Color = color, Size = 8, Style = Esri.ArcGISRuntime.Symbology.SimpleMarkerSymbolStyle.Circle },
+            Esri.ArcGISRuntime.Geometry.GeometryType.Polyline => new Esri.ArcGISRuntime.Symbology.SimpleLineSymbol
+            { Color = color, Width = 2 },
+            _ => new Esri.ArcGISRuntime.Symbology.SimpleFillSymbol
+            { Color = System.Drawing.Color.FromArgb(128, color), Outline = new Esri.ArcGISRuntime.Symbology.SimpleLineSymbol { Color = color, Width = 1 } }
+        };
+    }
+
     #endregion
 
     #region Symbology

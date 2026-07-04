@@ -18,23 +18,31 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- ====== 图名 ====== -->
-            <TextBlock Grid.Row="0" Text="📝 图名" FontSize="11" FontWeight="SemiBold"
+            <!-- ====== 图层选择 ====== -->
+            <TextBlock Grid.Row="0" Text="🗺 制图图层" FontSize="11" FontWeight="SemiBold"
                        Foreground="#333333" Margin="0,4,0,2"/>
-            <TextBox Grid.Row="1" x:Name="MapTitle" Height="26" FontSize="10"
+            <ComboBox Grid.Row="1" x:Name="LayerCombo" Height="24" FontSize="10" Margin="0,0,0,4"
+                      SelectionChanged="LayerCombo_Changed"/>
+
+            <!-- ====== 图名 ====== -->
+            <TextBlock Grid.Row="2" Text="📝 图名" FontSize="11" FontWeight="SemiBold"
+                       Foreground="#333333" Margin="0,4,0,2"/>
+            <TextBox Grid.Row="3" x:Name="MapTitle" Height="26" FontSize="10"
                      Text="长株潭地质灾害专题图" Margin="0,0,0,2"/>
 
             <!-- 副标题 -->
-            <TextBlock Grid.Row="2" Text="副标题" FontSize="10" Foreground="#555555" Margin="0,4,0,2"/>
-            <TextBox Grid.Row="3" x:Name="MapSubtitle" Height="26" FontSize="10"
+            <TextBlock Grid.Row="4" Text="副标题" FontSize="10" Foreground="#555555" Margin="0,4,0,2"/>
+            <TextBox Grid.Row="5" x:Name="MapSubtitle" Height="26" FontSize="10"
                      Text="土壤植被指标分析" Margin="0,0,0,2"/>
 
             <!-- ====== 图幅尺寸 ====== -->
-            <TextBlock Grid.Row="4" Text="📐 图幅尺寸" FontSize="11" FontWeight="SemiBold"
+            <TextBlock Grid.Row="6" Text="📐 图幅尺寸" FontSize="11" FontWeight="SemiBold"
                        Foreground="#333333" Margin="0,6,0,2"/>
-            <Grid Grid.Row="5" Margin="0,0,0,4">
+            <Grid Grid.Row="7" Margin="0,0,0,4">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/>
@@ -58,10 +66,10 @@
             </Grid>
 
             <!-- ====== 制图元素 ====== -->
-            <TextBlock Grid.Row="6" Text="🎨 制图元素" FontSize="11" FontWeight="SemiBold"
+            <TextBlock Grid.Row="8" Text="🎨 制图元素" FontSize="11" FontWeight="SemiBold"
                        Foreground="#333333" Margin="0,6,0,2"/>
 
-            <StackPanel Grid.Row="7" Margin="0,2,0,4">
+            <StackPanel Grid.Row="9" Margin="0,2,0,4">
                 <CheckBox x:Name="IncludeLegend" Content="图例（右侧面板，含CF分级配色）"
                           IsChecked="True" FontSize="10" Foreground="#333" Margin="0,2"/>
                 <CheckBox x:Name="IncludeScaleBar" Content="比例尺（底部，含刻度条+比例文字）"
@@ -73,9 +81,9 @@
             </StackPanel>
 
             <!-- ====== 输出设置 ====== -->
-            <TextBlock Grid.Row="8" Text="💾 输出设置" FontSize="11" FontWeight="SemiBold"
+            <TextBlock Grid.Row="10" Text="💾 输出设置" FontSize="11" FontWeight="SemiBold"
                        Foreground="#333333" Margin="0,6,0,2"/>
-            <Grid Grid.Row="9" Margin="0,0,0,4">
+            <Grid Grid.Row="11" Margin="0,0,0,4">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
@@ -88,7 +96,7 @@
             </Grid>
 
             <!-- ====== 操作按钮 ====== -->
-            <StackPanel Grid.Row="10" Orientation="Horizontal" Margin="0,6,0,6">
+            <StackPanel Grid.Row="12" Orientation="Horizontal" Margin="0,6,0,6">
                 <Button x:Name="BtnGenerateMap" Content="🗺 生成专题图" Width="120" Height="32" FontSize="11"
                         Background="#1565C0" Foreground="White" BorderThickness="0"
                         Cursor="Hand" Click="GenerateMap_Click" FontWeight="SemiBold">
@@ -128,7 +136,7 @@
             </StackPanel>
 
             <!-- ====== 进度/状态 ====== -->
-            <Border Grid.Row="11" x:Name="StatusBorder" Background="#F8F8F8"
+            <Border Grid.Row="13" x:Name="StatusBorder" Background="#F8F8F8"
                     CornerRadius="3" Padding="6,4" Margin="0,2,0,4"
                     Visibility="Collapsed">
                 <TextBlock x:Name="StatusText" Text="" FontSize="10"

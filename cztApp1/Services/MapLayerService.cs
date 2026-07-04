@@ -245,6 +245,14 @@ public class MapLayerService
     }
 
     /// <summary>
+    /// 按字段配色
+    /// </summary>
+    public async Task ApplyFieldSymbologyAsync(MapLayer layer, string fieldName, List<System.Drawing.Color> ramp)
+    {
+        await _mapView.ApplyFieldSymbologyAsync(layer.LayerId, fieldName, ramp);
+    }
+
+    /// <summary>
     /// 移动图层到指定位置
     /// </summary>
     public void MoveLayerTo(MapLayer layer, int targetIndex)
