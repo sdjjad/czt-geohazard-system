@@ -40,6 +40,17 @@ dotnet run --project cztApp1/cztApp1.csproj
 - 窗口无 `DropShadowEffect`（位图特效触发软件渲染）
 - `MouseMove` 坐标采集节流 100ms，`ScreenToLocation` 是重操作
 
+### 样式系统
+
+- `ControlStyles.xaml` 在 `App.xaml` 全局合并，不能只在 MainWindow 合并（UserControl 独立加载时找不到 StaticResource 会崩溃）
+- 右键菜单统一样式：白底#C8C8C8边框、圆角4px、微阴影、MenuItem hover #E8F0F8
+- ComboBox/TextBox/DataGrid/ScrollBar 全局样式在 ControlStyles.xaml
+
+### 面板初始化注意
+
+- `GeoProcessToolView.RefreshLayerList()` 设 `SelectedIndex` 会触发 `SelectionChanged`，使用 `_suppressEvents` 标志抑制自动字段加载
+- 异步 `RefreshFieldListAsync()` 在 await 后检查 `IsLoaded` 防止控件已被销毁
+
 ### 地图引擎
 
 **Esri.ArcGISRuntime.WPF 200.6.0**（ArcGIS Runtime SDK for .NET）：
@@ -267,9 +278,16 @@ GeoPanelAnchor.IsSelected = true;
 
 ---
 
-## 右键菜单
+## 右键菜单（已统一白底蓝hover样式）
 
 | 触发位置 | 菜单项 |
 |---------|--------|
-| 数据面板树（SHP文件） | 添加到地图 / 缩放至图层 / 📋 属性浏览 / 属性 |
-| 图层面板树 | 缩放至图层 / 符号系统 / 📋 属性浏览(矢) / 上移 / 下移 / 移除 |
+| 数据面板树（SHP文件） | 添加到地图 / 缩放至图层 / 属性浏览 / 属性 |
+| 图层面板树 | 缩放至图层 / 符号系统 / 属性浏览(矢) / 上移 / 下移 / 移除 |
+
+## 项目文档
+
+位于 `docs/` 目录，截图在 `docs/screenshots/`：
+- 系统架构设计.md / 功能设计.md / 界面设计.md
+- 算法流程设计.md / 数据库设计.md / 函数接口设计.md
+- `tools/EmbedImages/` — 截图嵌入工具（dotnet run 即可）
