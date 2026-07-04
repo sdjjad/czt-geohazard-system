@@ -28,7 +28,6 @@
                 <ResourceDictionary Source="Styles/ButtonStyles.xaml"/>
                 <ResourceDictionary Source="Styles/TabStyles.xaml"/>
                 <ResourceDictionary Source="Styles/PanelStyles.xaml"/>
-                <ResourceDictionary Source="Styles/RibbonIcons.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
             <Style x:Key="CaptionBtn" TargetType="Button">
@@ -350,25 +349,46 @@
                                 <StackPanel Orientation="Horizontal">
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="ImportData">
                                         <StackPanel>
-                                            <ContentControl Content="{StaticResource IconImport}" Margin="0,0,0,2"/>
+                                            <Viewbox Width="20" Height="18" Margin="0,0,0,2">
+                                                <Canvas Width="20" Height="18">
+                                                    <Path Fill="#1565C0" Data="M0,3 L0,15 L20,15 L20,5 L8,5 L6,3 Z"/>
+                                                    <Path Data="M7,7 L13,7 L13,12 L7,12 Z M10,6 L10,13 M7,9.5 L13,9.5" Stroke="White" StrokeThickness="1.5"/>
+                                                </Canvas>
+                                            </Viewbox>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="导入数据"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="SpatialQuery">
                                         <StackPanel>
-                                            <ContentControl Content="{StaticResource IconSpatialQuery}" Margin="0,0,0,2"/>
+                                            <Viewbox Width="20" Height="20" Margin="0,0,0,2">
+                                                <Canvas Width="20" Height="20">
+                                                    <Path Fill="#1565C0" Data="M1,2 L13,2 L13,10 L1,10 Z M10,9 L18,17 L15,18 L8,11 Z"/>
+                                                    <Path Fill="White" Data="M3,4 L7,4 L7,7 L3,7 Z"/>
+                                                </Canvas>
+                                            </Viewbox>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="空间查询"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="SpatialAnalysis">
                                         <StackPanel>
-                                            <ContentControl Content="{StaticResource IconSpatialAnalysis}" Margin="0,0,0,2"/>
+                                            <Viewbox Width="20" Height="20" Margin="0,0,0,2">
+                                                <Canvas Width="20" Height="20">
+                                                    <Path Fill="#90CAF9" Data="M2,2 L16,2 L16,7 L2,7 Z"/>
+                                                    <Path Fill="#1565C0" Data="M1,7 L18,7 L18,12 L1,12 Z"/>
+                                                    <Path Fill="#64B5F6" Data="M4,12 L14,12 L14,17 L4,17 Z"/>
+                                                </Canvas>
+                                            </Viewbox>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="空间分析"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="Mapping">
                                         <StackPanel>
-                                            <ContentControl Content="{StaticResource IconMapping}" Margin="0,0,0,2"/>
+                                            <Viewbox Width="20" Height="20" Margin="0,0,0,2">
+                                                <Canvas Width="20" Height="20">
+                                                    <Path Fill="#1565C0" Data="M3,4 L17,4 L17,16 L3,16 Z"/>
+                                                    <Path Data="M10,8 L14,12 M10,8 L6,14 M10,8 L14,8 L10,4" Stroke="White" StrokeThickness="1.5"/>
+                                                </Canvas>
+                                            </Viewbox>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="制图"/>
                                         </StackPanel>
                                     </Button>
@@ -384,19 +404,32 @@
                                 <StackPanel Orientation="Horizontal">
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="AttributeBrowse">
                                         <StackPanel>
-                                            <ContentControl Content="{StaticResource IconAttrBrowse}" Margin="0,0,0,2"/>
+                                            <Viewbox Width="20" Height="18" Margin="0,0,0,2">
+                                                <Canvas Width="20" Height="18">
+                                                    <Path Fill="#1565C0" Data="M0,2 L20,2 L20,16 L0,16 Z"/>
+                                                    <Path Data="M0,7 L20,7 M7,2 L7,16 M0,12 L20,12" Stroke="White" StrokeThickness="1.2"/>
+                                                </Canvas>
+                                            </Viewbox>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="属性浏览"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="AttributeQuery">
                                         <StackPanel>
-                                            <ContentControl Content="{StaticResource IconAttrQuery}" Margin="0,0,0,2"/>
+                                            <Viewbox Width="20" Height="20" Margin="0,0,0,2">
+                                                <Canvas Width="20" Height="20">
+                                                    <Path Fill="#1565C0" Data="M2,2 L18,2 L12,11 L12,18 L8,14 L8,11 Z"/>
+                                                </Canvas>
+                                            </Viewbox>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="属性查询"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="AttributeManage">
                                         <StackPanel>
-                                            <ContentControl Content="{StaticResource IconAttrManage}" Margin="0,0,0,2"/>
+                                            <Viewbox Width="18" Height="18" Margin="0,0,0,2">
+                                                <Canvas Width="18" Height="18">
+                                                    <Path Fill="#1565C0" Data="M3,13 L5,15 L14,4 L12,2 Z M2,14 L3.5,17 L6.5,15.5 Z"/>
+                                                </Canvas>
+                                            </Viewbox>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="属性管理"/>
                                         </StackPanel>
                                     </Button>
@@ -415,31 +448,58 @@
                                 <StackPanel Orientation="Horizontal">
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="SoilTypeAnalysis">
                                         <StackPanel>
-                                            <ContentControl Content="{StaticResource IconSoilType}" Margin="0,0,0,2"/>
+                                            <Viewbox Width="20" Height="20" Margin="0,0,0,2">
+                                                <Canvas Width="20" Height="20">
+                                                    <Path Fill="#795548" Data="M2,2 L18,2 L18,18 L2,18 Z"/>
+                                                    <Path Data="M2,5 Q6,4 10,6 Q14,7 18,5 M2,9 Q6,10 10,8 Q14,7 18,9 M2,13 Q6,12 10,14 Q14,15 18,13" Stroke="#A1887F" StrokeThickness="1"/>
+                                                    <Path Data="M8,2 L8,0 M10,2 L10,-1 M12,2 L12,0" Stroke="#4CAF50" StrokeThickness="1.2"/>
+                                                </Canvas>
+                                            </Viewbox>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="土壤类型"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="SoilMoisture">
                                         <StackPanel>
-                                            <ContentControl Content="{StaticResource IconSoilMoisture}" Margin="0,0,0,2"/>
+                                            <Viewbox Width="18" Height="20" Margin="0,0,0,2">
+                                                <Canvas Width="18" Height="20">
+                                                    <Path Fill="#0288D1" Data="M9,0 C4,7 1,11 1,15 C1,18 3,20 9,20 C15,20 17,18 17,15 C17,11 14,7 9,0 Z"/>
+                                                    <Path Fill="#B3E5FC" Data="M7,15 Q9,12 11,15 Q10,17 7,15"/>
+                                                </Canvas>
+                                            </Viewbox>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="土壤湿度"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="VegType">
                                         <StackPanel>
-                                            <ContentControl Content="{StaticResource IconVegType}" Margin="0,0,0,2"/>
+                                            <Viewbox Width="20" Height="20" Margin="0,0,0,2">
+                                                <Canvas Width="20" Height="20">
+                                                    <Path Fill="#2E7D32" Data="M10,1 C18,3 19,10 10,19 C1,10 2,3 10,1 Z"/>
+                                                    <Path Data="M10,1 L10,19 M10,7 L16,13 M10,12 L5,16" Stroke="#4CAF50" StrokeThickness="0.8"/>
+                                                </Canvas>
+                                            </Viewbox>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="植被类型"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="VegCoverage">
                                         <StackPanel>
-                                            <ContentControl Content="{StaticResource IconVegCoverage}" Margin="0,0,0,2"/>
+                                            <Viewbox Width="20" Height="20" Margin="0,0,0,2">
+                                                <Canvas Width="20" Height="20">
+                                                    <Path Fill="#A5D6A7" Data="M1,2 L13,2 L13,14 L1,14 Z"/>
+                                                    <Path Data="M1,2 L1,14 M4,2 L4,14 M7,2 L7,14 M10,2 L10,14 M13,2 L13,14 M1,2 L13,2 M1,6 L13,6 M1,10 L13,10 M1,14 L13,14" Stroke="#2E7D32" StrokeThickness="0.5"/>
+                                                    <Path Fill="#2E7D32" Data="M1,2 L5,2 L5,6 L1,6 Z M7,2 L9,2 L9,4 L7,4 Z M3,8 L7,8 L7,10 L3,10 Z"/>
+                                                </Canvas>
+                                            </Viewbox>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="植被覆盖度"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="NDVI">
                                         <StackPanel>
-                                            <ContentControl Content="{StaticResource IconNDVI}" Margin="0,0,0,2"/>
+                                            <Viewbox Width="20" Height="18" Margin="0,0,0,2">
+                                                <Canvas Width="20" Height="18">
+                                                    <Path Data="M0,16 L4,12 L7,13 L10,5 L13,7 L16,1 L20,4" Stroke="#E53935" StrokeThickness="1.5"/>
+                                                    <Path Data="M0,18 L20,18" Stroke="#BDBDBD" StrokeThickness="0.5"/>
+                                                </Canvas>
+                                            </Viewbox>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="NDVI"/>
                                         </StackPanel>
                                     </Button>
@@ -458,19 +518,36 @@
                                 <StackPanel Orientation="Horizontal">
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="StatChart">
                                         <StackPanel>
-                                            <ContentControl Content="{StaticResource IconStatChart}" Margin="0,0,0,2"/>
+                                            <Viewbox Width="20" Height="20" Margin="0,0,0,2">
+                                                <Canvas Width="20" Height="20">
+                                                    <Path Data="M0,18 L20,18" Stroke="#1565C0" StrokeThickness="1.2"/>
+                                                    <Path Fill="#1565C0" Data="M2,18 L2,8 L5,8 L5,18 Z M6,18 L6,4 L9,4 L9,18 Z M10,18 L10,11 L13,11 L13,18 Z M14,18 L14,3 L17,3 L17,18 Z"/>
+                                                </Canvas>
+                                            </Viewbox>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="统计图"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="StatTable">
                                         <StackPanel>
-                                            <ContentControl Content="{StaticResource IconStatTable}" Margin="0,0,0,2"/>
+                                            <Viewbox Width="20" Height="18" Margin="0,0,0,2">
+                                                <Canvas Width="20" Height="18">
+                                                    <Path Fill="#1565C0" Data="M0,0 L20,0 L20,16 L0,16 Z"/>
+                                                    <Path Fill="#90CAF9" Data="M0,0 L20,0 L20,4 L0,4 Z"/>
+                                                    <Path Data="M6,0 L6,16 M13,0 L13,16 M0,8 L20,8 M0,12 L20,12" Stroke="White" StrokeThickness="1"/>
+                                                </Canvas>
+                                            </Viewbox>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="统计表"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="ThematicMap">
                                         <StackPanel>
-                                            <ContentControl Content="{StaticResource IconThematicMap}" Margin="0,0,0,2"/>
+                                            <Viewbox Width="20" Height="20" Margin="0,0,0,2">
+                                                <Canvas Width="20" Height="20">
+                                                    <Path Fill="#1565C0" Data="M2,3 L16,3 L16,14 L2,14 Z"/>
+                                                    <Path Data="M4,6 L8,6 L8,9 L4,9 Z M10,6 L14,6 L14,9 L10,9 Z M4,10 L8,10 L8,12 L4,12 Z" Stroke="White" StrokeThickness="0.8"/>
+                                                    <Path Fill="#E53935" Data="M17,5 L19,2 L18,5 Z"/>
+                                                </Canvas>
+                                            </Viewbox>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="专题图"/>
                                         </StackPanel>
                                     </Button>
