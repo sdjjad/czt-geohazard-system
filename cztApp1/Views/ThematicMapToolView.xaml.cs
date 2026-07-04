@@ -190,8 +190,8 @@ namespace cztApp1.Views
 
         private void ButtonBarEnabled(bool enabled)
         {
-            // Simply toggle known buttons - the ButtonBar is a StackPanel with 3 buttons
-            // This simple method is sufficient for the current layout
+            BtnGenerateMap.IsEnabled = enabled;
+            BtnExportLegend.IsEnabled = enabled;
         }
 
         #endregion

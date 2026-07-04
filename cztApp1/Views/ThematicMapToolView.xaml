@@ -89,7 +89,7 @@
 
             <!-- ====== 操作按钮 ====== -->
             <StackPanel Grid.Row="10" Orientation="Horizontal" Margin="0,6,0,6">
-                <Button Content="🗺 生成专题图" Width="120" Height="32" FontSize="11"
+                <Button x:Name="BtnGenerateMap" Content="🗺 生成专题图" Width="120" Height="32" FontSize="11"
                         Background="#1565C0" Foreground="White" BorderThickness="0"
                         Cursor="Hand" Click="GenerateMap_Click" FontWeight="SemiBold">
                     <Button.Template>
@@ -101,7 +101,7 @@
                         </ControlTemplate>
                     </Button.Template>
                 </Button>
-                <Button Content="📋 仅导出图例" Width="110" Height="32" FontSize="11"
+                <Button x:Name="BtnExportLegend" Content="📋 仅导出图例" Width="110" Height="32" FontSize="11"
                         Background="#43A047" Foreground="White" BorderThickness="0"
                         Cursor="Hand" Click="ExportLegend_Click" Margin="6,0,0,0">
                     <Button.Template>

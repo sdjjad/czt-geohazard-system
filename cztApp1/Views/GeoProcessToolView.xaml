@@ -6,16 +6,19 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <Grid Margin="4,2">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>  <!-- 0: ToolDesc -->
+                <RowDefinition Height="Auto"/>  <!-- 1: 数据源 -->
+                <RowDefinition Height="Auto"/>  <!-- 2: DataSource ComboBox -->
+                <RowDefinition Height="Auto"/>  <!-- 3: 数据范围 -->
+                <RowDefinition Height="Auto"/>  <!-- 4: DataRange ComboBox -->
+                <RowDefinition Height="Auto"/>  <!-- 5: 数据时间 -->
+                <RowDefinition Height="Auto"/>  <!-- 6: DataTime ComboBox -->
+                <RowDefinition Height="Auto"/>  <!-- 7: AnalysisSection -->
+                <RowDefinition Height="Auto"/>  <!-- 8: ParamSection -->
+                <RowDefinition Height="Auto"/>  <!-- 9: PlaceholderMsg -->
+                <RowDefinition Height="Auto"/>  <!-- 10: ButtonBar -->
+                <RowDefinition Height="Auto"/>  <!-- 11: ProgressText -->
+                <RowDefinition Height="*"/>     <!-- 12: ResultSection -->
             </Grid.RowDefinitions>
 
             <!-- ====== 0. 工具描述 ====== -->

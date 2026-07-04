@@ -1136,8 +1136,10 @@ namespace cztApp1
         /// </summary>
         private void OpenGeoTool(ModuleInfo module)
         {
-            // 1. 显示地理处理面板
+            // 1. 显示地理处理面板并置顶
             GeoPanelAnchor.Show();
+            GeoPanelAnchor.IsActive = true;
+            GeoPanelAnchor.IsSelected = true;
 
             // 2. 更新面板标题
             GeoPanelAnchor.Title = $"地理处理 — {module.Name}";
@@ -1165,6 +1167,8 @@ namespace cztApp1
         private void OpenThematicTool(ModuleInfo module, string tag)
         {
             GeoPanelAnchor.Show();
+            GeoPanelAnchor.IsActive = true;
+            GeoPanelAnchor.IsSelected = true;
             GeoPanelAnchor.Title = $"专题制图 — {module.Name}";
 
             // 清除分析工具视图
