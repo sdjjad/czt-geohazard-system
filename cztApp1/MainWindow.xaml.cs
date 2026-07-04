@@ -1183,6 +1183,7 @@ namespace cztApp1
         private ThematicMapToolView? _themeToolView;
         private AttributeTableView? _attrTableView;
         private AttributeQueryView? _attrQueryView;
+        private AttributeManageView? _attrManageView;
         private SpatialQueryView? _spatialQueryView;
 
         /// <summary>
@@ -1206,7 +1207,7 @@ namespace cztApp1
                 // === 属性数据管理 ===
                 case "AttributeBrowse":  OpenAttributeTable(); break;
                 case "AttributeQuery":   OpenAttributeQuery(); break;
-                case "AttributeManage":  OpenSimpleTool("属性管理", "属性编辑功能：\n\n• 选择图层后可编辑属性字段值\n• 支持添加/删除字段\n• 支持字段计算器\n\n（高级编辑功能开发中）"); break;
+                case "AttributeManage":  OpenAttributeManage(); break;
 
                 // === 土壤植被分析 ===
                 case "SoilTypeAnalysis":
@@ -1216,8 +1217,8 @@ namespace cztApp1
                 case "NDVI":             OpenGeoTool(module); break;
 
                 // === 专题制图 ===
-                case "StatChart":        OpenThematicMap(); break;
-                case "StatTable":        OpenThematicMap(); break;
+                case "StatChart":        OpenStatChartViewer(); break;
+                case "StatTable":        OpenStatTableViewer(); break;
                 case "ThematicMap":      OpenThematicMap(); break;
 
                 default:                 OpenGeoTool(module); break;
@@ -1251,7 +1252,8 @@ namespace cztApp1
         private void ClearPanelContent()
         {
             _geoToolView = null; _themeToolView = null;
-            _attrTableView = null; _attrQueryView = null; _spatialQueryView = null;
+            _attrTableView = null; _attrQueryView = null;
+            _attrManageView = null; _spatialQueryView = null;
             GeoPanelContent.Content = null;
         }
 
@@ -1345,6 +1347,37 @@ namespace cztApp1
             RecordOperation("打开属性查询");
         }
 
+        /// <summary>打开属性管理视图（可编辑属性表）</summary>
+        private void OpenAttributeManage()
+        {
+            ShowGeoPanel("属性管理");
+            ClearPanelContent();
+            _attrManageView = new AttributeManageView();
+            _attrManageView.SetLayerService(_mapLayerService);
+            GeoPanelContent.Content = _attrManageView;
+            RecordOperation("打开属性管理");
+        }
+
+        /// <summary>打开统计图查看器</summary>
+        private void OpenStatChartViewer()
+        {
+            ShowGeoPanel("查看统计图");
+            ClearPanelContent();
+            var viewer = BuildStatChartViewer();
+            GeoPanelContent.Content = viewer;
+            RecordOperation("查看统计图");
+        }
+
+        /// <summary>打开统计表查看器</summary>
+        private void OpenStatTableViewer()
+        {
+            ShowGeoPanel("查看统计表");
+            ClearPanelContent();
+            var viewer = BuildStatTableViewer();
+            GeoPanelContent.Content = viewer;
+            RecordOperation("查看统计表");
+        }
+
         /// <summary>打开空间查询视图</summary>
         private void OpenSpatialQuery()
         {
@@ -1398,6 +1431,164 @@ namespace cztApp1
             _geoToolView.RefreshLayerList();
             RecordOperation($"打开工具: {module.Name}");
         }
+
+        #region 统计图/统计表查看器
+
+        /// <summary>构建统计图查看器：列出输出目录中的PNG文件，点击预览</summary>
+        private UIElement BuildStatChartViewer()
+        {
+            var grid = new Grid { Margin = new Thickness(4, 2, 4, 2) };
+            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Auto) });
+            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Auto) });
+            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+            var title = new TextBlock { Text = "📊 查看统计图", FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(Color.FromRgb(0x33, 0x33, 0x33)), Margin = new Thickness(0, 2, 0, 4) };
+            Grid.SetRow(title, 0); grid.Children.Add(title);
+
+            var hint = new TextBlock { Text = "选择输出目录中的PNG统计图进行预览", FontSize = 9, Foreground = new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99)), Margin = new Thickness(0, 0, 0, 4) };
+            Grid.SetRow(hint, 1); grid.Children.Add(hint);
+
+            var outputFolder = @"D:\GeoHazardOutput";
+            var scrollViewer = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+
+            var inner = new StackPanel();
+            if (Directory.Exists(outputFolder))
+            {
+                var pngFiles = Directory.GetFiles(outputFolder, "*.png", SearchOption.TopDirectoryOnly).OrderByDescending(File.GetLastWriteTime).ToList();
+                if (pngFiles.Count == 0)
+                {
+                    inner.Children.Add(new TextBlock { Text = "暂无统计图，请先运行分析生成。", FontSize = 10, Foreground = new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99)), Margin = new Thickness(0, 8, 0, 0) });
+                }
+                else
+                {
+                    foreach (var png in pngFiles)
+                    {
+                        var item = BuildChartItem(png);
+                        inner.Children.Add(item);
+                    }
+                }
+            }
+            else
+            {
+                inner.Children.Add(new TextBlock { Text = $"输出目录不存在: {outputFolder}\n请先运行分析生成统计图。", FontSize = 10, Foreground = new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99)), Margin = new Thickness(0, 8, 0, 0) });
+            }
+
+            scrollViewer.Content = inner;
+            Grid.SetRow(scrollViewer, 2); grid.Children.Add(scrollViewer);
+            return grid;
+        }
+
+        private static Border BuildChartItem(string pngPath)
+        {
+            var border = new Border
+            {
+                Background = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromRgb(0xE0, 0xE0, 0xE0)),
+                BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4),
+                Margin = new Thickness(0, 0, 0, 4), Padding = new Thickness(6), Cursor = Cursors.Hand
+            };
+            var sp = new StackPanel { Orientation = Orientation.Horizontal };
+            // 缩略图
+            try
+            {
+                var img = new Image { Source = new System.Windows.Media.Imaging.BitmapImage(new Uri(pngPath)), Width = 120, Stretch = System.Windows.Media.Stretch.Uniform, Margin = new Thickness(0, 0, 8, 0) };
+                sp.Children.Add(img);
+            }
+            catch { }
+            var info = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            info.Children.Add(new TextBlock { Text = Path.GetFileName(pngPath), FontSize = 10, Foreground = new SolidColorBrush(Color.FromRgb(0x33, 0x33, 0x33)) });
+            try
+            {
+                var fi = new FileInfo(pngPath);
+                info.Children.Add(new TextBlock { Text = $"{fi.LastWriteTime:yyyy-MM-dd HH:mm}  |  {fi.Length / 1024} KB", FontSize = 8, Foreground = new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99)) });
+            }
+            catch { }
+            sp.Children.Add(info);
+            border.Child = sp;
+            // 点击用系统默认程序打开
+            border.MouseLeftButtonDown += (_, _) =>
+            {
+                try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = pngPath, UseShellExecute = true }); } catch { }
+            };
+            border.MouseEnter += (s, _) => ((Border)s).Background = new SolidColorBrush(Color.FromRgb(0xBB, 0xDE, 0xFB));
+            border.MouseLeave += (s, _) => ((Border)s).Background = Brushes.White;
+            return border;
+        }
+
+        /// <summary>构建统计表查看器：列出输出目录中的CSV文件，点击预览内容</summary>
+        private UIElement BuildStatTableViewer()
+        {
+            var grid = new Grid { Margin = new Thickness(4, 2, 4, 2) };
+            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Auto) });
+            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Auto) });
+            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Auto) });
+            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+            var title = new TextBlock { Text = "📋 查看统计表", FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(Color.FromRgb(0x33, 0x33, 0x33)), Margin = new Thickness(0, 2, 0, 4) };
+            Grid.SetRow(title, 0); grid.Children.Add(title);
+
+            var hint = new TextBlock { Text = "选择输出目录中的CSV统计表进行预览", FontSize = 9, Foreground = new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99)), Margin = new Thickness(0, 0, 0, 4) };
+            Grid.SetRow(hint, 1); grid.Children.Add(hint);
+
+            var outputFolder = @"D:\GeoHazardOutput";
+
+            // CSV 文件列表
+            var fileList = new ListBox
+            {
+                FontSize = 10, Background = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromRgb(0xE0, 0xE0, 0xE0)),
+                MaxHeight = 120, Margin = new Thickness(0, 0, 0, 6)
+            };
+            if (Directory.Exists(outputFolder))
+            {
+                var csvFiles = Directory.GetFiles(outputFolder, "*.csv", SearchOption.TopDirectoryOnly).OrderByDescending(File.GetLastWriteTime).ToList();
+                foreach (var csv in csvFiles)
+                    fileList.Items.Add(Path.GetFileName(csv));
+            }
+            Grid.SetRow(fileList, 2); grid.Children.Add(fileList);
+
+            // 预览 DataGrid
+            var previewGrid = new DataGrid
+            {
+                AutoGenerateColumns = true, IsReadOnly = true, FontSize = 9,
+                Background = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromRgb(0xE0, 0xE0, 0xE0)),
+                HeadersVisibility = DataGridHeadersVisibility.Column,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+            };
+            Grid.SetRow(previewGrid, 3); grid.Children.Add(previewGrid);
+
+            fileList.SelectionChanged += (_, _) =>
+            {
+                if (fileList.SelectedItem is string fileName)
+                {
+                    var csvPath = Path.Combine(outputFolder, fileName);
+                    try
+                    {
+                        var dt = new System.Data.DataTable();
+                        var lines = File.ReadAllLines(csvPath, System.Text.Encoding.UTF8);
+                        if (lines.Length > 0)
+                        {
+                            var headers = lines[0].Split(',');
+                            foreach (var h in headers) dt.Columns.Add(h, typeof(string));
+                            for (int i = 1; i < Math.Min(lines.Length, 501); i++)
+                            {
+                                var row = dt.NewRow();
+                                var vals = lines[i].Split(',');
+                                for (int j = 0; j < Math.Min(headers.Length, vals.Length); j++)
+                                    row[j] = vals[j];
+                                dt.Rows.Add(row);
+                            }
+                        }
+                        previewGrid.ItemsSource = dt.DefaultView;
+                    }
+                    catch { previewGrid.ItemsSource = null; }
+                }
+            };
+
+            if (fileList.Items.Count > 0) fileList.SelectedIndex = 0;
+            return grid;
+        }
+
+        #endregion
 
         #endregion
 

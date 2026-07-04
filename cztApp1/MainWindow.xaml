@@ -151,11 +151,13 @@
                                     <Setter TargetName="Expander" Property="Visibility" Value="Hidden"/>
                                 </Trigger>
                                 <Trigger SourceName="Bd" Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="Bd" Property="Background" Value="#F0F0F0"/>
+                                    <Setter TargetName="Bd" Property="Background" Value="#BBDEFB"/>
                                 </Trigger>
                                 <Trigger Property="IsSelected" Value="True">
-                                    <Setter TargetName="Bd" Property="Background" Value="#E6EDF5"/>
-                                    <Setter Property="Foreground" Value="#1565C0"/>
+                                    <Setter TargetName="Bd" Property="Background" Value="#E3F2FD"/>
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#0D47A1"/>
+                                    <Setter TargetName="Bd" Property="BorderThickness" Value="1"/>
+                                    <Setter Property="Foreground" Value="#0D47A1"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -212,13 +214,13 @@
                                         <Condition SourceName="Bd" Property="IsMouseOver" Value="True"/>
                                         <Condition Property="IsSelected" Value="False"/>
                                     </MultiTrigger.Conditions>
-                                    <Setter TargetName="Bd" Property="Background" Value="#E6EDF5"/>
+                                    <Setter TargetName="Bd" Property="Background" Value="#BBDEFB"/>
                                     <Setter TargetName="Bd" Property="BorderBrush" Value="Transparent"/>
                                 </MultiTrigger>
                                 <Trigger Property="IsSelected" Value="True">
-                                    <Setter TargetName="Bd" Property="Background" Value="#E6EDF5"/>
-                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#1565C0"/>
-                                    <Setter Property="Foreground" Value="#1565C0"/>
+                                    <Setter TargetName="Bd" Property="Background" Value="#E3F2FD"/>
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#0D47A1"/>
+                                    <Setter Property="Foreground" Value="#0D47A1"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
