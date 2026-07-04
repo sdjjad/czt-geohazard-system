@@ -3,7 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="Transparent" FontFamily="Microsoft YaHei UI">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                  CanContentScroll="False">
         <Grid Margin="4,2">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/><!-- 0: 标题+刷新 -->
@@ -28,8 +29,8 @@
                            Foreground="#666" TextWrapping="Wrap"
                            Visibility="Collapsed"/>
                 <Button Grid.Column="1" Content="🔄" Width="26" Height="22" FontSize="11"
-                        Click="Refresh_Click" Background="#E8E8E8" BorderThickness="0"
-                        Cursor="Hand" ToolTip="刷新图层列表和字段"/>
+                        Style="{StaticResource PanelButton}" ToolTip="刷新图层列表和字段"
+                        Click="Refresh_Click"/>
             </Grid>
 
             <!-- 1. 分类面图层 -->
