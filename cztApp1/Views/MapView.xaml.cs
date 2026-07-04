@@ -34,7 +34,29 @@ public partial class MapView : UserControl
         EsriMapView.Map = _map;
         if (EsriMapView.BackgroundGrid != null)
             EsriMapView.BackgroundGrid.IsVisible = false;
+
+        // 实时坐标和比例尺事件
+        EsriMapView.ViewpointChanged += (_, _) =>
+        {
+            var scale = EsriMapView.MapScale;
+            ScaleChanged?.Invoke(scale);
+        };
+        EsriMapView.MouseMove += (_, e) =>
+        {
+            try
+            {
+                var pt = EsriMapView.ScreenToLocation(e.GetPosition(EsriMapView));
+                if (pt != null)
+                    CoordinateChanged?.Invoke(pt.X, pt.Y);
+            }
+            catch { }
+        };
     }
+
+    /// <summary>比例尺变化事件（参数：比例尺分母）</summary>
+    public event Action<double>? ScaleChanged;
+    /// <summary>鼠标坐标变化事件（参数：经度, 纬度）</summary>
+    public event Action<double, double>? CoordinateChanged;
 
     #region Public API
 

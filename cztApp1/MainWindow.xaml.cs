@@ -56,9 +56,25 @@ namespace cztApp1
             LayerTreeView.ItemsSource = _mapLayerService.Layers;
             SetupLayerTreeViewEvents();
 
-            // 默认只显示数据面板和图层面板，隐藏符号和地理处理面板
+            // 默认只显示数据面板和图层面板
             SymbolPanelAnchor.Hide();
             GeoPanelAnchor.Hide();
+
+            // 实时坐标和比例尺
+            MapViewControl.ScaleChanged += scale =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    if (scale >= 1000000) StatusScale.Text = $"1:{scale / 1000000:F1}M";
+                    else if (scale >= 1000) StatusScale.Text = $"1:{scale / 1000:F0}K";
+                    else StatusScale.Text = $"1:{scale:F0}";
+                });
+            };
+            MapViewControl.CoordinateChanged += (lon, lat) =>
+            {
+                Dispatcher.Invoke(() =>
+                    StatusCoord.Text = $"{lon:F4}°E  {lat:F4}°N");
+            };
 
 
             // Hook up tree double-click

@@ -243,61 +243,72 @@ namespace cztApp1.Views
             };
         }
 
-        // ====== 真实比例尺 ======
+        // ====== 通用黑白比例尺 ======
         private static FrameworkElement BuildScaleBar(double mapScale)
         {
-            var grid = new Grid { Margin = new Thickness(0), Cursor = Cursors.Hand };
-            var panel = new StackPanel();
-
-            // 计算比例尺条长度
+            var panel = new StackPanel { Cursor = Cursors.Hand };
             double metersPerPixel = mapScale / 96.0 * 0.0254;
             int barWidth = 100;
             double barMeters = barWidth * metersPerPixel;
-            string label;
-            if (barMeters > 10000) label = $"{barMeters / 1000:F0} km";
-            else if (barMeters > 1000) label = $"{barMeters / 1000:F1} km";
-            else label = $"{barMeters:F0} m";
+            string label = barMeters switch
+            {
+                > 10000 => $"{barMeters / 1000:F0} km",
+                > 1000 => $"{barMeters / 1000:F1} km",
+                _ => $"{barMeters:F0} m"
+            };
 
-            var bar = new Grid { Width = barWidth, Height = 6 };
-            bar.ColumnDefinitions.Add(new ColumnDefinition());
-            bar.ColumnDefinitions.Add(new ColumnDefinition());
-            bar.Children.Add(new Border { Background = Brushes.Black, Height = 6 });
-            var w = new Border { Background = Brushes.White, Height = 6 };
-            Grid.SetColumn(w, 1); bar.Children.Add(w);
+            // 黑白相间比例尺条
+            var bar = new Grid { Width = barWidth, Height = 5 };
+            for (int i = 0; i < 4; i++)
+            {
+                bar.ColumnDefinitions.Add(new ColumnDefinition());
+                var b = new Border { Background = (i % 2 == 0) ? Brushes.Black : Brushes.White };
+                Grid.SetColumn(b, i); bar.Children.Add(b);
+            }
 
             panel.Children.Add(bar);
-            panel.Children.Add(new Border { Width = barWidth, Height = 2, Background = Brushes.Black, HorizontalAlignment = System.Windows.HorizontalAlignment.Left });
-            panel.Children.Add(new TextBlock { Text = label, FontSize = 8, Foreground = new SolidColorBrush(Color.FromRgb(0x33, 0x33, 0x33)) });
-            panel.Children.Add(new TextBlock { Text = $"1:{mapScale / 1000:F0}K", FontSize = 7, Foreground = new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99)) });
+            // 两端竖线
+            var ticks = new Grid { Width = barWidth };
+            ticks.Children.Add(new System.Windows.Shapes.Line { X1 = 0, Y1 = 0, X2 = 0, Y2 = 3, Stroke = Brushes.Black, StrokeThickness = 1, HorizontalAlignment = System.Windows.HorizontalAlignment.Left });
+            ticks.Children.Add(new System.Windows.Shapes.Line { X1 = 0, Y1 = 0, X2 = 0, Y2 = 3, Stroke = Brushes.Black, StrokeThickness = 1, HorizontalAlignment = System.Windows.HorizontalAlignment.Right });
+            panel.Children.Add(ticks);
+            panel.Children.Add(new TextBlock { Text = label, FontSize = 8, Foreground = Brushes.Black, Margin = new Thickness(0, 2, 0, 0) });
 
             return new Border
             {
-                Background = new SolidColorBrush(Color.FromArgb(220, 255, 255, 255)),
-                Padding = new Thickness(6, 4, 6, 4),
-                CornerRadius = new CornerRadius(2),
+                Background = new SolidColorBrush(Color.FromArgb(230, 255, 255, 255)),
+                Padding = new Thickness(6, 3, 6, 4), CornerRadius = new CornerRadius(2),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(0xCC, 0xCC, 0xCC)), BorderThickness = new Thickness(0.5),
                 Child = panel
             };
         }
 
-        // ====== 真实指北针 ======
+        // ====== 通用黑白指北针 ======
         private static FrameworkElement BuildNorthArrow()
         {
-            var canvas = new Canvas { Width = 30, Height = 40, Cursor = Cursors.Hand };
-            var arrow = new System.Windows.Shapes.Polygon
+            var canvas = new Canvas { Width = 28, Height = 36, Cursor = Cursors.Hand };
+            // 上半箭头（黑）
+            var top = new System.Windows.Shapes.Polygon
             {
-                Points = new PointCollection { new(15, 0), new(25, 25), new(15, 20), new(5, 25) },
-                Fill = new SolidColorBrush(Color.FromRgb(0xE8, 0x11, 0x23))
+                Points = new PointCollection { new(14, 0), new(22, 22), new(14, 18), new(6, 22) },
+                Fill = Brushes.Black
             };
-            canvas.Children.Add(arrow);
-            var n = new TextBlock { Text = "N", FontSize = 10, FontWeight = FontWeights.Bold,
-                Foreground = new SolidColorBrush(Color.FromRgb(0xE8, 0x11, 0x23)) };
-            Canvas.SetLeft(n, 9); Canvas.SetTop(n, 24);
+            canvas.Children.Add(top);
+            // 下半箭头（白底黑边）
+            var bot = new System.Windows.Shapes.Polygon
+            {
+                Points = new PointCollection { new(14, 36), new(22, 22), new(14, 18), new(6, 22) },
+                Fill = Brushes.White, Stroke = Brushes.Black, StrokeThickness = 1
+            };
+            canvas.Children.Add(bot);
+            var n = new TextBlock { Text = "N", FontSize = 10, FontWeight = FontWeights.Bold, Foreground = Brushes.Black };
+            Canvas.SetLeft(n, 8); Canvas.SetTop(n, 22);
             canvas.Children.Add(n);
 
             return new Border
             {
-                Background = new SolidColorBrush(Color.FromArgb(220, 255, 255, 255)),
-                Padding = new Thickness(4), CornerRadius = new CornerRadius(2),
+                Background = new SolidColorBrush(Color.FromArgb(230, 255, 255, 255)),
+                Padding = new Thickness(3), CornerRadius = new CornerRadius(2),
                 Child = canvas
             };
         }
