@@ -1079,6 +1079,7 @@ namespace cztApp1
         #region 分析面板
 
         private GeoProcessToolView? _geoToolView;
+        private ThematicMapToolView? _themeToolView;
 
         /// <summary>
         /// 统一的 Ribbon 按钮 Click 处理器。通过 Tag 区分工具名。
@@ -1087,7 +1088,17 @@ namespace cztApp1
         {
             if (sender is not Button btn || btn.Tag is not string tag) return;
             var module = ResolveTool(tag);
-            if (module != null) OpenGeoTool(module);
+            if (module == null) return;
+
+            // 专题制图工具 → 使用专题图视图
+            if (tag is "MapExport" or "LegendSettings" or "ReportGen")
+            {
+                OpenThematicTool(module, tag);
+            }
+            else
+            {
+                OpenGeoTool(module);
+            }
         }
 
         /// <summary>
@@ -1120,7 +1131,7 @@ namespace cztApp1
         };
 
         /// <summary>
-        /// 在右侧地理处理面板中打开指定工具。
+        /// 在右侧地理处理面板中打开指定分析工具。
         /// ArcGIS Pro 风格：所有工具都在地理处理面板内运行，不遮挡地图。
         /// </summary>
         private void OpenGeoTool(ModuleInfo module)
@@ -1131,13 +1142,45 @@ namespace cztApp1
             // 2. 更新面板标题
             GeoPanelAnchor.Title = $"地理处理 — {module.Name}";
 
-            // 3. 创建/更新工具视图
+            // 3. 创建/更新工具视图（清除专题图视图）
+            if (_themeToolView != null)
+            {
+                GeoPanelContent.Content = null;
+                _themeToolView = null;
+            }
+
             if (_geoToolView == null)
             {
                 _geoToolView = new GeoProcessToolView();
                 GeoPanelContent.Content = _geoToolView;
             }
             _geoToolView.LoadTool(module);
+
+            RecordOperation($"打开工具: {module.Name}");
+        }
+
+        /// <summary>
+        /// 打开专题制图工具（地图输出/图例设置/报表生成）
+        /// </summary>
+        private void OpenThematicTool(ModuleInfo module, string tag)
+        {
+            GeoPanelAnchor.Show();
+            GeoPanelAnchor.Title = $"专题制图 — {module.Name}";
+
+            // 清除分析工具视图
+            if (_geoToolView != null)
+            {
+                GeoPanelContent.Content = null;
+                _geoToolView = null;
+            }
+
+            if (_themeToolView == null)
+            {
+                _themeToolView = new ThematicMapToolView();
+                _themeToolView.SetMapView(MapViewControl);
+                GeoPanelContent.Content = _themeToolView;
+            }
+            _themeToolView.LoadTool(tag);
 
             RecordOperation($"打开工具: {module.Name}");
         }

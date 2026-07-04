@@ -145,6 +145,42 @@ namespace cztApp1.Models
         };
 
         // ================================================================
+        // 专题制图 — 全部实装（自动生成带图名/图例/比例尺/指北针的专题图）
+        // ================================================================
+
+        public static readonly ModuleInfo MapExport = new()
+        {
+            Name = "地图输出",
+            Description = "自动生成专题图：包含图名、图例、比例尺、指北针，支持PNG格式导出",
+            Parameters = new[] { "图名", "副标题", "图幅尺寸", "图例", "比例尺", "指北针" },
+            Methods = new[] { "PNG输出", "PDF输出" }
+        };
+
+        public static readonly ModuleInfo LegendSettings = new()
+        {
+            Name = "图例设置",
+            Description = "生成/导出独立图例图片，包含CF分级配色和图层说明",
+            Parameters = new[] { "图例标题", "配色方案" },
+            Methods = new[] { "CF分级配色", "默认配色", "自定义配色" }
+        };
+
+        public static readonly ModuleInfo ReportGen = new()
+        {
+            Name = "报表生成",
+            Description = "生成地质灾害统计分析综合报表（HTML格式），含统计表、柱状图、CF汇总",
+            Parameters = new[] { "分析模块", "统计指标" },
+            Methods = new[] { "HTML报告", "Excel报表", "PDF文档" }
+        };
+
+        public static readonly ModuleInfo PrintSettings = new()
+        {
+            Name = "打印设置",
+            Description = "配置打印参数：纸张大小、方向、边距、DPI",
+            Parameters = new[] { "纸张", "方向", "DPI" },
+            Methods = new[] { "A4纵向", "A3横向", "自定义" }
+        };
+
+        // ================================================================
         // 占位工具（显示"开发中..."）
         // ================================================================
 
@@ -156,10 +192,6 @@ namespace cztApp1.Models
         public static readonly ModuleInfo AttributeBrowse = new() { Name = "属性浏览" };
         public static readonly ModuleInfo AttributeQuery = new() { Name = "属性查询" };
         public static readonly ModuleInfo AttributeManage = new() { Name = "属性管理" };
-        public static readonly ModuleInfo MapExport = new() { Name = "地图输出" };
-        public static readonly ModuleInfo LegendSettings = new() { Name = "图例设置" };
-        public static readonly ModuleInfo PrintSettings = new() { Name = "打印设置" };
-        public static readonly ModuleInfo ReportGen = new() { Name = "报表生成" };
 
         /// <summary>
         /// 获取所有实装的分析工具模块
