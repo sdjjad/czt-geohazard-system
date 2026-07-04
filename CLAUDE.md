@@ -48,42 +48,60 @@ Requires .NET 10.0 SDK with WPF workload. Target: `net10.0-windows10.0.19041.0`.
 
 ## Window layout
 
+**Dirkster.AvalonDock** (v4.74.1, `net10.0-windows7.0`) replaces fixed Grid layout with dockable panels.
+
 ```
 ┌─ 标题栏 ── [↩][↘] | 视图 ─ [─][□][✕] ─────────────────────┐
-├─ Ribbon: 数据管理 | 地质地震 | 地形地貌 | 土壤植被 | 专题制图 ──┤
-├────────┬───┬──────────────────┬───┬────────────────────────┤
-│ 数据面板 │ ↔ │      地图区       │ ↔ │  图层面板               │
-│        │   │  (ArcGIS Runtime) │   │  符号面板               │
-│        │   │                  │   │  地理处理面板             │
-├────────┴───┴──────────────────┴───┴────────────────────────┤
+├─ Ribbon: 数据管理 | 土壤植被 | 专题制图 ────────────────────┤
+├──────────────────────────────────────────────────────────┤
+│  DockingManager                                         │
+│  ┌ 数据面板 ┐ ┌── 地图(中心) ──┐ ┌ 图层面板 | 符号 | 地理 ┐ │
+│  │(可停靠)  │ │ ArcGIS Runtime │ │(可停靠、可浮动、可拖拽) │ │
+│  └─────────┘ └───────────────┘ └────────────────────────┘ │
+├──────────────────────────────────────────────────────────┤
 │ 状态栏 ── 图层数 ── 比例尺 ── 经纬度 ──────────────────────┘
 ```
 
-### Panel rules (CRITICAL — do NOT break)
+### Panels (all dockable via AvalonDock)
 
-All four panels share **identical** structure. Any new panel must match:
+All panels are `LayoutAnchorable` inside `DockingManager`. Users can:
+- **Drag** title to dock left/right/top/bottom
+- **Float** by dragging outside the window
+- **Auto-hide** (pin/unpin)
+- **Close/reopen** via View menu
+- **Reorder** by dragging tabs
 
-| Element | Rule |
-|---------|------|
-| Outer border | `Style="{StaticResource PanelBorderStyle}"` |
-| Title row | `Grid.Row="0" Margin="0,0,0,6"` with 3 cols (Auto, *, Auto) |
-| Title text | `TextBlock Grid.Column="0" Style="{StaticResource PanelTitleStyle}"` |
-| Buttons | `StackPanel Grid.Column="2"` with 3× `PanelIconBtnStyle` buttons (⋮ ⤢ ✕) |
-| Content row | `Grid.Row="1"` (fill remaining space) |
-| Internal Grid | `Grid.RowDefinitions`: `Auto` (title) + `*` (content) |
+| Panel | ContentId | Content |
+|-------|-----------|---------|
+| 数据面板 | `DataPanel` | search box + 空间/属性 toggle + TreeView catalog |
+| 图层面板 | `LayerPanel` | TreeView with checkbox + 符号预览 |
+| 符号面板 | `SymbolPanel` | symbol editor, hidden by default |
+| 地理处理面板 | `GeoPanel` | geoprocessing tool view, opens on ribbon click |
+| 地图视图 | `MapView` | `LayoutDocument`, always in center, cannot close |
 
-**All four panels (数据管理, 图层, 符号系统, 地理处理) follow this exact template. No exceptions.**
+### Panel API
 
-### Panels (left to right)
+```csharp
+// Show/hide
+DataPanelAnchor.Show();     DataPanelAnchor.Hide();
+LayerPanelAnchor.Show();    LayerPanelAnchor.Hide();
+SymbolPanelAnchor.Show();   SymbolPanelAnchor.Hide();
+GeoPanelAnchor.Show();      GeoPanelAnchor.Hide();
 
-- **数据面板** (col 0, 220px): search box + 空间/属性 toggle + TreeView catalog
-- **地图区** (col 2, *): `esri:MapView` ArcGIS Runtime control
-- **右侧列** (col 4, 220px, RightPanelGrid): stacked panels with GridSplitters
-  - Row 0: **图层面板** — TreeView with checkbox + 符号预览
-  - Row 1: RightSplitter
-  - Row 2: **符号面板** — symbol editor (default hidden)
-  - Row 3: GeoSplitter
-  - Row 4: **地理处理面板** — geoprocessing content (default hidden)
+// Check visibility
+DataPanelAnchor.IsVisible
+
+// AutoHide / Float
+anchorable.ToggleAutoHide();
+anchorable.Float();
+```
+
+### Panel content structure
+
+Each panel still follows the unified template internally:
+- `Style="{StaticResource PanelBorderStyle}"`
+- Title row with `PanelTitleStyle` + 3× `PanelIconBtnStyle`
+- Content row filling remaining space
 
 ### Title bar
 

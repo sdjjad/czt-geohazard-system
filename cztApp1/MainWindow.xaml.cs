@@ -172,40 +172,29 @@ namespace cztApp1
         private void GeoOptions_Click(object sender, RoutedEventArgs e) { }
         private void GeoAutoHide_Click(object sender, RoutedEventArgs e) { }
 
+        private void DockManager_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            // 不做拦截，让事件自然路由到 Esri MapView
+        }
+
         private void GeoPanelClose_Click(object sender, RoutedEventArgs e)
         {
-            GeoPanelHost.Visibility = Visibility.Collapsed;
-            GeoSplitter.Visibility = Visibility.Collapsed;
-            RightPanelGrid.RowDefinitions[4].Height = GridLength.Auto;
-            // 恢复行高：如果符号面板还开着，图层占主要空间
-            if (SymbolPanelHost.Visibility == Visibility.Visible)
-            {
-                RightPanelGrid.RowDefinitions[0].Height = new GridLength(3, GridUnitType.Star);
-                RightPanelGrid.RowDefinitions[2].Height = new GridLength(1, GridUnitType.Star);
-            }
-            else
-            {
-                RightPanelGrid.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
-            }
+            GeoPanelAnchor.Hide();
+            GeoPanelAnchor.Title = "地理处理";
         }
 
         private void ViewMenu_Click(object sender, RoutedEventArgs e)
         {
-            // 动态检测各面板当前可见状态，更新勾选标记
-            bool dataVisible = MainContentGrid.ColumnDefinitions[0].Width.Value > 0;
             bool mapVisible = MapViewControl.Visibility == Visibility.Visible;
-            bool layerVisible = MainContentGrid.ColumnDefinitions[4].Width.Value > 0;
-            bool symbolVisible = SymbolPanelHost.Visibility == Visibility.Visible;
 
             string Chk(bool v) => v ? "✓ " : "   ";
 
             var menu = new ContextMenu();
-            var miData = new MenuItem { Header = $"{Chk(dataVisible)}数据面板", Tag = "Data" };
+            var miData = new MenuItem { Header = $"{Chk(DataPanelAnchor.IsVisible)}数据面板", Tag = "Data" };
             var miMap  = new MenuItem { Header = $"{Chk(mapVisible)}地图视图", Tag = "Map" };
-            var miLayer= new MenuItem { Header = $"{Chk(layerVisible)}图层面板", Tag = "Layer" };
-            bool geoVisible = GeoPanelHost.Visibility == Visibility.Visible;
-            var miSym  = new MenuItem { Header = $"{Chk(symbolVisible)}符号系统", Tag = "Symbol" };
-            var miGeo  = new MenuItem { Header = $"{Chk(geoVisible)}地理处理", Tag = "Geo" };
+            var miLayer= new MenuItem { Header = $"{Chk(LayerPanelAnchor.IsVisible)}图层面板", Tag = "Layer" };
+            var miSym  = new MenuItem { Header = $"{Chk(SymbolPanelAnchor.IsVisible)}符号系统", Tag = "Symbol" };
+            var miGeo  = new MenuItem { Header = $"{Chk(GeoPanelAnchor.IsVisible)}地理处理", Tag = "Geo" };
 
             foreach (var mi in new[] { miData, miMap, miLayer, miSym, miGeo })
             {
@@ -224,112 +213,39 @@ namespace cztApp1
             switch (tag)
             {
                 case "Data":
-                    // 复用 PanelClose_Click 逻辑：找到数据面板 Border 并切换
-                    var dataBorder = MainContentGrid.Children.OfType<Border>().FirstOrDefault();
-                    if (dataBorder != null)
-                    {
-                        bool wasVisible = dataBorder.Visibility == Visibility.Visible;
-                        dataBorder.Visibility = wasVisible ? Visibility.Collapsed : Visibility.Visible;
-                        MainContentGrid.ColumnDefinitions[0].MinWidth = wasVisible ? 0 : 150;
-                        MainContentGrid.ColumnDefinitions[0].Width = wasVisible ? new GridLength(0) : new GridLength(220);
-                        if (FindName("LeftSplitter") is GridSplitter ls)
-                            ls.Visibility = wasVisible ? Visibility.Collapsed : Visibility.Visible;
-                    }
+                    if (DataPanelAnchor.IsVisible) DataPanelAnchor.Hide(); else DataPanelAnchor.Show();
                     break;
-
                 case "Map":
                     MapViewControl.Visibility = MapViewControl.Visibility == Visibility.Visible
                         ? Visibility.Collapsed : Visibility.Visible;
                     break;
-
                 case "Layer":
-                    // 复用 LayerPanelClose_Click 逻辑
-                    var layerBorder = RightPanelGrid.Children.OfType<Border>().FirstOrDefault();
-                    if (layerBorder != null)
-                    {
-                        bool wasVisible = layerBorder.Visibility == Visibility.Visible;
-                        layerBorder.Visibility = wasVisible ? Visibility.Collapsed : Visibility.Visible;
-                        AdjustRightColumn();
-                        if (wasVisible) break;
-                        // 显示时恢复列宽
-                        MainContentGrid.ColumnDefinitions[4].MinWidth = 150;
-                        MainContentGrid.ColumnDefinitions[4].Width = new GridLength(220);
-                        if (FindName("RightOuterSplitter") is GridSplitter rs)
-                            rs.Visibility = Visibility.Visible;
-                    }
+                    if (LayerPanelAnchor.IsVisible) LayerPanelAnchor.Hide(); else LayerPanelAnchor.Show();
                     break;
-
                 case "Symbol":
-                    if (SymbolPanelHost.Visibility == Visibility.Visible)
-                        SymbolPanelClose_Click(sender, e);
-                    else
-                    {
-                        MainContentGrid.ColumnDefinitions[4].MinWidth = 150;
-                        MainContentGrid.ColumnDefinitions[4].Width = new GridLength(220);
-                        if (FindName("RightOuterSplitter") is GridSplitter rs2)
-                            rs2.Visibility = Visibility.Visible;
-                        SymbolPanelHost.Visibility = Visibility.Visible;
-                        RightSplitter.Visibility = Visibility.Visible;
-                        // 图层:符号:地理处理 = 3:1:1
-                        RightPanelGrid.RowDefinitions[0].Height = new GridLength(3, GridUnitType.Star);
-                        RightPanelGrid.RowDefinitions[2].Height = new GridLength(1, GridUnitType.Star);
-                        RightPanelGrid.RowDefinitions[4].Height = GeoPanelHost.Visibility == Visibility.Visible
-                            ? new GridLength(1, GridUnitType.Star) : GridLength.Auto;
-                        SymbolPanelTitle.Text = "符号系统";
-                    }
+                    if (SymbolPanelAnchor.IsVisible) SymbolPanelAnchor.Hide(); else SymbolPanelAnchor.Show();
                     break;
-
                 case "Geo":
-                    if (GeoPanelHost.Visibility == Visibility.Visible)
-                        GeoPanelClose_Click(sender, e);
-                    else
-                    {
-                        MainContentGrid.ColumnDefinitions[4].MinWidth = 150;
-                        MainContentGrid.ColumnDefinitions[4].Width = new GridLength(220);
-                        if (FindName("RightOuterSplitter") is GridSplitter rs3)
-                            rs3.Visibility = Visibility.Visible;
-                        GeoPanelHost.Visibility = Visibility.Visible;
-                        GeoSplitter.Visibility = Visibility.Visible;
-                        // 分配行高：图层/符号/地理处理按 3:1:1 分配
-                        RightPanelGrid.RowDefinitions[0].Height = new GridLength(3, GridUnitType.Star);
-                        RightPanelGrid.RowDefinitions[2].Height = SymbolPanelHost.Visibility == Visibility.Visible
-                            ? new GridLength(1, GridUnitType.Star) : GridLength.Auto;
-                        RightPanelGrid.RowDefinitions[4].Height = new GridLength(1, GridUnitType.Star);
-                    }
+                    if (GeoPanelAnchor.IsVisible) GeoPanelAnchor.Hide(); else GeoPanelAnchor.Show();
                     break;
             }
         }
 
-        private void SymbolAutoHide_Click(object sender, RoutedEventArgs e)
-        {
-            // 预留：符号面板自动隐藏
-        }
+        private void SymbolAutoHide_Click(object sender, RoutedEventArgs e) { }
 
         private void SymbolOptions_Click(object sender, RoutedEventArgs e)
         {
             var menu = new ContextMenu();
             var close = new MenuItem { Header = "关闭符号系统" };
-            close.Click += (_, _) => SymbolPanelHost.Visibility = Visibility.Collapsed;
+            close.Click += (_, _) => SymbolPanelAnchor.Hide();
             menu.Items.Add(close);
             menu.IsOpen = true;
         }
 
         private void SymbolPanelClose_Click(object sender, RoutedEventArgs e)
         {
-            SymbolPanelHost.Visibility = Visibility.Collapsed;
-            RightSplitter.Visibility = Visibility.Collapsed;
-            RightPanelGrid.RowDefinitions[2].Height = GridLength.Auto;
-            // 如果地理处理面板还开着，调整行高
-            if (GeoPanelHost.Visibility == Visibility.Visible)
-            {
-                RightPanelGrid.RowDefinitions[0].Height = new GridLength(3, GridUnitType.Star);
-                RightPanelGrid.RowDefinitions[4].Height = new GridLength(1, GridUnitType.Star);
-            }
-            else
-            {
-                RightPanelGrid.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
-            }
-            AdjustRightColumn();
+            SymbolPanelAnchor.Hide();
+            SymbolPanelAnchor.Title = "符号系统";
         }
 
         private void LayerOptions_Click(object sender, RoutedEventArgs e)
@@ -348,39 +264,7 @@ namespace cztApp1
 
         private void LayerPanelClose_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn)
-            {
-                var border = FindParent<Border>(btn);
-                if (border != null) border.Visibility = Visibility.Collapsed;
-            }
-            AdjustRightColumn();
-        }
-
-        /// <summary>
-        /// 检查右侧面板区：如果图层面板和符号面板都隐藏，则折叠右侧列
-        /// </summary>
-        private void AdjustRightColumn()
-        {
-            // 图层面板是 RightPanelGrid 之下的第一个 Border（Row 0），需判断其 Visibility
-            bool layerVisible = false;
-            if (RightPanelGrid.Children.Count > 0 && RightPanelGrid.Children[0] is Border layerBorder)
-                layerVisible = layerBorder.Visibility == Visibility.Visible;
-
-            bool symbolVisible = SymbolPanelHost.Visibility == Visibility.Visible;
-            bool geoVisible = GeoPanelHost.Visibility == Visibility.Visible;
-
-            if (!layerVisible && !symbolVisible && !geoVisible)
-            {
-                MainContentGrid.ColumnDefinitions[4].MinWidth = 0;
-                MainContentGrid.ColumnDefinitions[4].Width = new GridLength(0);
-                RightOuterSplitter.Visibility = Visibility.Collapsed;
-            }
-            else
-            {
-                MainContentGrid.ColumnDefinitions[4].MinWidth = 150;
-                MainContentGrid.ColumnDefinitions[4].Width = new GridLength(220);
-                RightOuterSplitter.Visibility = Visibility.Visible;
-            }
+            LayerPanelAnchor.Hide();
         }
 
         #region 图层树事件
@@ -511,17 +395,8 @@ namespace cztApp1
         private void ShowSymbolEditor(MapLayer layer)
         {
             _currentSymbolLayer = layer;
-            if (MainContentGrid.ColumnDefinitions[4].Width.Value < 1)
-            {
-                MainContentGrid.ColumnDefinitions[4].Width = new GridLength(220);
-                RightOuterSplitter.Visibility = Visibility.Visible;
-            }
-            SymbolPanelHost.Visibility = Visibility.Visible;
-            RightSplitter.Visibility = Visibility.Visible;
-            RightPanelGrid.RowDefinitions[0].Height = new GridLength(3, GridUnitType.Star);
-            RightPanelGrid.RowDefinitions[2].Height = new GridLength(1, GridUnitType.Star);
-
-            SymbolPanelTitle.Text = $"符号系统 — {layer.Name}";
+            SymbolPanelAnchor.Show();
+            SymbolPanelAnchor.Title = $"符号系统 — {layer.Name}";
             var isVector = layer.Type == SpatialDataType.Vector;
             var geom = layer.Symbols.Count > 0 ? layer.Symbols[0].Geometry : SymbolGeometry.Polygon;
 
@@ -929,31 +804,11 @@ namespace cztApp1
             menu.IsOpen = true;
         }
 
-        private void AutoHide_Click(object sender, RoutedEventArgs e)
-        {
-            AutoHideBtn.Tag = AutoHideBtn.Tag is null ? "pinned" : null;
-        }
+        private void AutoHide_Click(object sender, RoutedEventArgs e) { }
 
         private void PanelClose_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is FrameworkElement fe)
-            {
-                var panel = fe.Parent as UIElement;
-                while (panel is not null && panel is not Border)
-                    panel = (panel as FrameworkElement)?.Parent as UIElement;
-                if (panel is Border b)
-                {
-                    var collapsed = b.Visibility == Visibility.Visible;
-                    b.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
-                    // 调整列宽：面板隐藏时列归零，显示时恢复
-                    MainContentGrid.ColumnDefinitions[0].Width = collapsed
-                        ? new GridLength(0)
-                        : new GridLength(220);
-                    LeftSplitter.Visibility = collapsed
-                        ? Visibility.Collapsed
-                        : Visibility.Visible;
-                }
-            }
+            DataPanelAnchor.Hide();
         }
 
         private static readonly SolidColorBrush SkyBlue = new(Color.FromRgb(0x4F, 0xC3, 0xF7));
@@ -1223,28 +1078,69 @@ namespace cztApp1
 
         #region 分析面板
 
-        private void ShowAnalysis(ModuleInfo module)
+        private GeoProcessToolView? _geoToolView;
+
+        /// <summary>
+        /// 统一的 Ribbon 按钮 Click 处理器。通过 Tag 区分工具名。
+        /// </summary>
+        private void OpenTool_Click(object sender, RoutedEventArgs e)
         {
-            if (AnalysisHost.Children.Count == 0)
-            {
-                var panel = new AnalysisPanel();
-                panel.Closed += () =>
-                {
-                    AnalysisHost.Children.Clear();
-                    MapViewControl.Visibility = Visibility.Visible;
-                };
-                AnalysisHost.Children.Add(panel);
-            }
-            else if (AnalysisHost.Children[0] is AnalysisPanel existing)
-            {
-                existing.LoadModule(module);
-            }
-            MapViewControl.Visibility = Visibility.Collapsed;
+            if (sender is not Button btn || btn.Tag is not string tag) return;
+            var module = ResolveTool(tag);
+            if (module != null) OpenGeoTool(module);
         }
 
-        private void Geo_Btn_Click(object sender, RoutedEventArgs e) => ShowAnalysis(ModuleRegistry.Geology);
-        private void Topo_Btn_Click(object sender, RoutedEventArgs e) => ShowAnalysis(ModuleRegistry.Topography);
-        private void Veg_Btn_Click(object sender, RoutedEventArgs e) => ShowAnalysis(ModuleRegistry.Vegetation);
+        /// <summary>
+        /// Tag → ModuleInfo 映射。
+        /// </summary>
+        private static ModuleInfo? ResolveTool(string tag) => tag switch
+        {
+            // 数据管理 — 空间数据管理组
+            "ImportData" => ModuleRegistry.ImportData,
+            "MapOps" => ModuleRegistry.MapOps,
+            "SpatialQuery" => ModuleRegistry.SpatialQuery,
+            "SpatialAnalysis" => ModuleRegistry.SpatialAnalysis,
+            "Mapping" => ModuleRegistry.Mapping,
+            // 数据管理 — 属性数据管理组
+            "AttributeBrowse" => ModuleRegistry.AttributeBrowse,
+            "AttributeQuery" => ModuleRegistry.AttributeQuery,
+            "AttributeManage" => ModuleRegistry.AttributeManage,
+            // 土壤植被 — 五个核心指标
+            "SoilTypeAnalysis" => ModuleRegistry.SoilTypeAnalysis,
+            "SoilMoisture" => ModuleRegistry.SoilMoisture,
+            "VegType" => ModuleRegistry.VegType,
+            "VegCoverage" => ModuleRegistry.VegCoverage,
+            "NDVI" => ModuleRegistry.NDVI,
+            // 专题制图
+            "MapExport" => ModuleRegistry.MapExport,
+            "LegendSettings" => ModuleRegistry.LegendSettings,
+            "PrintSettings" => ModuleRegistry.PrintSettings,
+            "ReportGen" => ModuleRegistry.ReportGen,
+            _ => null
+        };
+
+        /// <summary>
+        /// 在右侧地理处理面板中打开指定工具。
+        /// ArcGIS Pro 风格：所有工具都在地理处理面板内运行，不遮挡地图。
+        /// </summary>
+        private void OpenGeoTool(ModuleInfo module)
+        {
+            // 1. 显示地理处理面板
+            GeoPanelAnchor.Show();
+
+            // 2. 更新面板标题
+            GeoPanelAnchor.Title = $"地理处理 — {module.Name}";
+
+            // 3. 创建/更新工具视图
+            if (_geoToolView == null)
+            {
+                _geoToolView = new GeoProcessToolView();
+                GeoPanelContent.Content = _geoToolView;
+            }
+            _geoToolView.LoadTool(module);
+
+            RecordOperation($"打开工具: {module.Name}");
+        }
 
         #endregion
 

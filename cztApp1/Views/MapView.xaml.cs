@@ -9,6 +9,9 @@ namespace cztApp1.Views;
 
 public partial class MapView : UserControl
 {
+    /// <summary>暴露 Esri 原生 MapView，供外部转发输入事件。</summary>
+    public Esri.ArcGISRuntime.UI.Controls.MapView EsriControl => EsriMapView;
+
     private readonly Esri.ArcGISRuntime.Mapping.Map _map;
     private readonly Dictionary<string, Layer> _layerLookup = new();
 
@@ -28,7 +31,11 @@ public partial class MapView : UserControl
         try
         {
             var table = await ShapefileFeatureTable.OpenAsync(filePath);
-            var layer = new FeatureLayer(table) { Name = name };
+            var layer = new FeatureLayer(table)
+            {
+                Name = name,
+                RenderingMode = FeatureRenderingMode.Static
+            };
 
             // Apply initial symbology
             if (style != null)

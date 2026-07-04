@@ -1,7 +1,10 @@
 <Application x:Class="cztApp1.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:cztApp1">
+             xmlns:local="clr-namespace:cztApp1"
+             xmlns:views="clr-namespace:cztApp1.Views">
     <Application.Resources>
+        <views:CountToIndexConverter x:Key="CountToIndexConverter"/>
+        <views:CfToRiskConverter x:Key="CfToRiskConverter"/>
     </Application.Resources>
 </Application>

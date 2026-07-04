@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:views="clr-namespace:cztApp1.Views"
+        xmlns:avalonDock="https://github.com/Dirkster99/AvalonDock"
         mc:Ignorable="d"
         Title="长株潭地质灾害系统" Height="650" Width="1100"
         WindowStyle="None"
@@ -108,6 +109,144 @@
                     </Trigger>
                 </Style.Triggers>
             </Style>
+
+            <!-- DataTree ItemContainerStyle -->
+            <Style x:Key="DataTreeItemStyle" TargetType="TreeViewItem">
+                <Setter Property="Foreground" Value="#333333"/>
+                <Setter Property="Padding" Value="1,2"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TreeViewItem">
+                            <StackPanel>
+                                <Border x:Name="Bd" Background="Transparent" Padding="{TemplateBinding Padding}" CornerRadius="2">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <ToggleButton x:Name="Expander" Grid.Column="0" ClickMode="Press"
+                                                      IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
+                                                      Width="14" Height="14" Margin="0,0,2,0">
+                                            <ToggleButton.Template>
+                                                <ControlTemplate TargetType="ToggleButton">
+                                                    <Border Background="Transparent" Width="14" Height="14">
+                                                        <TextBlock x:Name="Arrow" Text="▶" FontSize="8" Foreground="#666666"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsChecked" Value="True">
+                                                            <Setter TargetName="Arrow" Property="Text" Value="▼"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </ToggleButton.Template>
+                                        </ToggleButton>
+                                        <ContentPresenter x:Name="PART_Header" Grid.Column="1" ContentSource="Header" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+                                <ItemsPresenter x:Name="ItemsHost" Margin="16,0,0,0" Visibility="Collapsed"/>
+                            </StackPanel>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsExpanded" Value="True">
+                                    <Setter TargetName="ItemsHost" Property="Visibility" Value="Visible"/>
+                                </Trigger>
+                                <Trigger Property="HasItems" Value="False">
+                                    <Setter TargetName="Expander" Property="Visibility" Value="Hidden"/>
+                                </Trigger>
+                                <Trigger SourceName="Bd" Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="#F0F0F0"/>
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="#E6EDF5"/>
+                                    <Setter Property="Foreground" Value="#1565C0"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- LayerTreeView ItemContainerStyle -->
+            <Style x:Key="LayerTreeItemStyle" TargetType="TreeViewItem">
+                <Setter Property="IsExpanded" Value="False"/>
+                <Setter Property="Padding" Value="1,2"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TreeViewItem">
+                            <StackPanel>
+                                <Border x:Name="Bd" Background="Transparent" BorderBrush="Transparent"
+                                        BorderThickness="1" CornerRadius="2" Padding="2,2">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="16"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <ToggleButton x:Name="Expander" Grid.Column="0" ClickMode="Press"
+                                                      IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
+                                                      Width="14" Height="14">
+                                            <ToggleButton.Template>
+                                                <ControlTemplate TargetType="ToggleButton">
+                                                    <Border Background="Transparent" Width="14" Height="14">
+                                                        <TextBlock x:Name="Arrow" Text="▶" FontSize="8" Foreground="#666"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsChecked" Value="True">
+                                                            <Setter TargetName="Arrow" Property="Text" Value="▼"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </ToggleButton.Template>
+                                        </ToggleButton>
+                                        <ContentPresenter x:Name="PART_Header" Grid.Column="2" ContentSource="Header"
+                                                          VerticalAlignment="Center" Margin="2,0,0,0"/>
+                                    </Grid>
+                                </Border>
+                                <ItemsPresenter x:Name="ItemsHost" Margin="16,0,0,0" Visibility="Collapsed"/>
+                            </StackPanel>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsExpanded" Value="True">
+                                    <Setter TargetName="ItemsHost" Property="Visibility" Value="Visible"/>
+                                </Trigger>
+                                <Trigger Property="HasItems" Value="False">
+                                    <Setter TargetName="Expander" Property="Visibility" Value="Hidden"/>
+                                </Trigger>
+                                <MultiTrigger>
+                                    <MultiTrigger.Conditions>
+                                        <Condition SourceName="Bd" Property="IsMouseOver" Value="True"/>
+                                        <Condition Property="IsSelected" Value="False"/>
+                                    </MultiTrigger.Conditions>
+                                    <Setter TargetName="Bd" Property="Background" Value="#E6EDF5"/>
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="Transparent"/>
+                                </MultiTrigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="#E6EDF5"/>
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#1565C0"/>
+                                    <Setter Property="Foreground" Value="#1565C0"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- LayerTreeView ItemTemplate -->
+            <HierarchicalDataTemplate x:Key="LayerTreeTemplate" ItemsSource="{Binding Symbols}">
+                <HierarchicalDataTemplate.ItemTemplate>
+                    <DataTemplate>
+                        <ContentControl Cursor="Hand" Background="Transparent" Margin="8,2,0,2"
+                                        PreviewMouseLeftButtonDown="SymbolItem_Click"
+                                        Content="{Binding Converter={x:Static views:SymbolPreviewConverter.Instance}}"
+                                        HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                    </DataTemplate>
+                </HierarchicalDataTemplate.ItemTemplate>
+                <Grid Background="Transparent">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <CheckBox Grid.Column="0" VerticalAlignment="Center"
+                              IsChecked="{Binding IsVisible, Mode=TwoWay}" Width="16" Height="16" Margin="2,0,6,0"
+                              Checked="LayerCheckBox_Changed" Unchecked="LayerCheckBox_Changed"/>
+                    <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center"
+                               Foreground="#333" TextTrimming="CharacterEllipsis"/>
+                </Grid>
+            </HierarchicalDataTemplate>
         </ResourceDictionary>
     </Window.Resources>
 
@@ -207,31 +346,31 @@
                         <Border Padding="8,3,10,3">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <Button Style="{StaticResource RbnBtn}">
+                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="ImportData">
                                         <StackPanel>
                                             <Image Source="/Resources/folder.png" Width="22" Height="22" Stretch="Uniform"/>
                                             <TextBlock Text="导入数据" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
-                                    <Button Style="{StaticResource RbnBtn}">
+                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="MapOps">
                                         <StackPanel>
                                             <Image Source="/Resources/marker.png" Width="22" Height="22" Stretch="Uniform"/>
                                             <TextBlock Text="地图操作" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
-                                    <Button Style="{StaticResource RbnBtn}">
+                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="SpatialQuery">
                                         <StackPanel>
                                             <Image Source="/Resources/search.png" Width="22" Height="22" Stretch="Uniform"/>
                                             <TextBlock Text="空间查询" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
-                                    <Button Style="{StaticResource RbnBtn}">
+                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="SpatialAnalysis">
                                         <StackPanel>
                                             <Image Source="/Resources/combo-chart.png" Width="22" Height="22" Stretch="Uniform"/>
                                             <TextBlock Text="空间分析" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
-                                    <Button Style="{StaticResource RbnBtn}">
+                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="Mapping">
                                         <StackPanel>
                                             <Image Source="/Resources/edit.png" Width="22" Height="22" Stretch="Uniform"/>
                                             <TextBlock Text="制图" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
@@ -244,25 +383,25 @@
                         <Border Padding="10,3,8,3">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <Button Style="{StaticResource RbnBtn}">
+                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="AttributeBrowse">
                                         <StackPanel>
                                             <Image Source="/Resources/table.png" Width="22" Height="22" Stretch="Uniform"/>
                                             <TextBlock Text="属性浏览" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
-                                    <Button Style="{StaticResource RbnBtn}">
+                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="AttributeQuery">
                                         <StackPanel>
                                             <Image Source="/Resources/search.png" Width="22" Height="22" Stretch="Uniform"/>
                                             <TextBlock Text="属性查询" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
-                                    <Button Style="{StaticResource RbnBtn}">
+                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="AttributeManage">
                                         <StackPanel>
                                             <Image Source="/Resources/settings.png" Width="22" Height="22" Stretch="Uniform"/>
                                             <TextBlock Text="属性管理" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
-                                    <Button Style="{StaticResource RbnBtn}">
+                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="Mapping">
                                         <StackPanel>
                                             <Image Source="/Resources/edit.png" Width="22" Height="22" Stretch="Uniform"/>
                                             <TextBlock Text="制图" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
@@ -275,118 +414,44 @@
                     </WrapPanel>
                 </TabItem>
 
-                <!-- 地质地震 -->
-                <TabItem Style="{StaticResource RibbonTabItem}" Header="地质地震">
-                    <WrapPanel Orientation="Horizontal">
-                        <Border Padding="8,3">
-                            <StackPanel>
-                                <StackPanel Orientation="Horizontal">
-                                    <Button Style="{StaticResource RbnBtn}" Click="Geo_Btn_Click">
-                                        <StackPanel>
-                                            <Image Source="/Resources/marker.png" Width="22" Height="22" Stretch="Uniform"/>
-                                            <TextBlock Text="地质构造" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Style="{StaticResource RbnBtn}">
-                                        <StackPanel>
-                                            <Image Source="/Resources/combo-chart.png" Width="22" Height="22" Stretch="Uniform"/>
-                                            <TextBlock Text="地震分布" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Style="{StaticResource RbnBtn}">
-                                        <StackPanel>
-                                            <Image Source="/Resources/warning-shield.png" Width="22" Height="22" Stretch="Uniform"/>
-                                            <TextBlock Text="地质灾害点" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Style="{StaticResource RbnBtn}">
-                                        <StackPanel>
-                                            <Image Source="/Resources/book.png" Width="22" Height="22" Stretch="Uniform"/>
-                                            <TextBlock Text="风险区划" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-                                </StackPanel>
-                                <TextBlock Style="{StaticResource GrpLbl}" Text="地质地震数据"/>
-                            </StackPanel>
-                        </Border>
-                    </WrapPanel>
-                </TabItem>
-
-                <!-- 地形地貌 -->
-                <TabItem Style="{StaticResource RibbonTabItem}" Header="地形地貌">
-                    <WrapPanel Orientation="Horizontal">
-                        <Border Padding="8,3">
-                            <StackPanel>
-                                <StackPanel Orientation="Horizontal">
-                                    <Button Style="{StaticResource RbnBtn}" Click="Topo_Btn_Click">
-                                        <StackPanel>
-                                            <Image Source="/Resources/marker.png" Width="22" Height="22" Stretch="Uniform"/>
-                                            <TextBlock Text="DEM数据" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Style="{StaticResource RbnBtn}">
-                                        <StackPanel>
-                                            <Image Source="/Resources/combo-chart.png" Width="22" Height="22" Stretch="Uniform"/>
-                                            <TextBlock Text="坡度分析" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Style="{StaticResource RbnBtn}">
-                                        <StackPanel>
-                                            <Image Source="/Resources/compass.png" Width="22" Height="22" Stretch="Uniform"/>
-                                            <TextBlock Text="坡向分析" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Style="{StaticResource RbnBtn}">
-                                        <StackPanel>
-                                            <Image Source="/Resources/combo-chart.png" Width="22" Height="22" Stretch="Uniform"/>
-                                            <TextBlock Text="等高线" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Style="{StaticResource RbnBtn}">
-                                        <StackPanel>
-                                            <Image Source="/Resources/compass.png" Width="22" Height="22" Stretch="Uniform"/>
-                                            <TextBlock Text="三维地形" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-                                </StackPanel>
-                                <TextBlock Style="{StaticResource GrpLbl}" Text="地形地貌数据"/>
-                            </StackPanel>
-                        </Border>
-                    </WrapPanel>
-                </TabItem>
-
                 <!-- 土壤植被 -->
                 <TabItem Style="{StaticResource RibbonTabItem}" Header="土壤植被">
                     <WrapPanel Orientation="Horizontal">
                         <Border Padding="8,3">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <Button Style="{StaticResource RbnBtn}" Click="Veg_Btn_Click">
+                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="SoilTypeAnalysis">
                                         <StackPanel>
                                             <Image Source="/Resources/soil.png" Width="22" Height="22" Stretch="Uniform"/>
                                             <TextBlock Text="土壤类型" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
-                                    <Button Style="{StaticResource RbnBtn}">
-                                        <StackPanel>
-                                            <Image Source="/Resources/leaf.png" Width="22" Height="22" Stretch="Uniform"/>
-                                            <TextBlock Text="植被覆盖" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Style="{StaticResource RbnBtn}">
-                                        <StackPanel>
-                                            <Image Source="/Resources/building.png" Width="22" Height="22" Stretch="Uniform"/>
-                                            <TextBlock Text="土地利用" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Style="{StaticResource RbnBtn}">
+                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="SoilMoisture">
                                         <StackPanel>
                                             <Image Source="/Resources/water.png" Width="22" Height="22" Stretch="Uniform"/>
-                                            <TextBlock Text="水土流失" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="土壤湿度" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="VegType">
+                                        <StackPanel>
+                                            <Image Source="/Resources/leaf.png" Width="22" Height="22" Stretch="Uniform"/>
+                                            <TextBlock Text="植被类型" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="VegCoverage">
+                                        <StackPanel>
+                                            <Image Source="/Resources/combo-chart.png" Width="22" Height="22" Stretch="Uniform"/>
+                                            <TextBlock Text="植被覆盖度" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="NDVI">
+                                        <StackPanel>
+                                            <Image Source="/Resources/edit.png" Width="22" Height="22" Stretch="Uniform"/>
+                                            <TextBlock Text="NDVI" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
                                 </StackPanel>
-                                <TextBlock Style="{StaticResource GrpLbl}" Text="土壤植被数据"/>
+                                <TextBlock Style="{StaticResource GrpLbl}" Text="土壤植被指标分析"/>
                             </StackPanel>
                         </Border>
                     </WrapPanel>
@@ -398,25 +463,25 @@
                         <Border Padding="8,3">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <Button Style="{StaticResource RbnBtn}">
+                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="MapExport">
                                         <StackPanel>
                                             <Image Source="/Resources/print.png" Width="22" Height="22" Stretch="Uniform"/>
                                             <TextBlock Text="地图输出" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
-                                    <Button Style="{StaticResource RbnBtn}">
+                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="LegendSettings">
                                         <StackPanel>
                                             <Image Source="/Resources/book.png" Width="22" Height="22" Stretch="Uniform"/>
                                             <TextBlock Text="图例设置" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
-                                    <Button Style="{StaticResource RbnBtn}">
+                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="PrintSettings">
                                         <StackPanel>
                                             <Image Source="/Resources/settings.png" Width="22" Height="22" Stretch="Uniform"/>
                                             <TextBlock Text="打印设置" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
-                                    <Button Style="{StaticResource RbnBtn}">
+                                    <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="ReportGen">
                                         <StackPanel>
                                             <Image Source="/Resources/document.png" Width="22" Height="22" Stretch="Uniform"/>
                                             <TextBlock Text="报表生成" FontSize="10" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
@@ -431,494 +496,124 @@
 
             </TabControl>
 
-            <!-- 主内容区 -->
-            <Grid Grid.Row="2" x:Name="MainContentGrid">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="220" MinWidth="150"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*" MinWidth="300"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="220" MinWidth="150"/>
-                </Grid.ColumnDefinitions>
+            <!-- 主内容区：AvalonDock 停靠面板系统 -->
+            <avalonDock:DockingManager Grid.Row="2" x:Name="DockManager">
+                <avalonDock:LayoutRoot>
+                    <avalonDock:LayoutPanel Orientation="Horizontal">
 
-                <!-- 数据管理面板 -->
-                <Border Grid.Column="0" Margin="6,2,0,4"
-                        Style="{StaticResource PanelBorderStyle}"
-                        MouseDown="DataPanel_GotFocus">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/><RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
+                        <!-- ====== 左侧：数据面板 ====== -->
+                        <avalonDock:LayoutAnchorablePane DockWidth="220" DockMinWidth="150">
+                            <avalonDock:LayoutAnchorable x:Name="DataPanelAnchor" Title="数据管理" CanClose="False" ContentId="DataPanel">
+                                <Border Margin="0" Style="{StaticResource PanelBorderStyle}">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
 
-                        <Grid Grid.Row="0" Margin="0,0,0,6">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="数据管理"
-                                       Style="{StaticResource PanelTitleStyle}"/>
-                            <StackPanel Grid.Column="3" Orientation="Horizontal">
-                                <Button Style="{StaticResource PanelIconBtnStyle}"
-                                        Click="PanelOptions_Click" ToolTip="选项">
-                                    <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets"
-                                               FontSize="8" Foreground="#444444"/>
-                                </Button>
-                                <Button x:Name="AutoHideBtn"
-                                        Style="{StaticResource PanelIconBtnStyle}"
-                                        Click="AutoHide_Click" ToolTip="自动隐藏">
-                                    <TextBlock Text="&#xE77A;" FontFamily="Segoe MDL2 Assets"
-                                               FontSize="10" Foreground="#444444"/>
-                                </Button>
-                                <Button Style="{StaticResource PanelIconBtnStyle}"
-                                        Click="PanelClose_Click" ToolTip="关闭面板">
-                                    <TextBlock Text="&#xE8BB;" FontFamily="Segoe MDL2 Assets"
-                                               FontSize="10" Foreground="#444444"/>
-                                </Button>
-                            </StackPanel>
-                        </Grid>
+                                        <Border Grid.Row="0" x:Name="SearchBorder" Background="White" BorderBrush="#D0D0D0"
+                                                BorderThickness="1" CornerRadius="3" Height="26" Margin="0,0,0,6"
+                                                MouseEnter="SearchBorder_MouseEnter" MouseLeave="SearchBorder_MouseLeave"
+                                                GotFocus="SearchBorder_GotFocus" LostFocus="SearchBorder_LostFocus"
+                                                MouseDown="SearchBorder_MouseDown">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                                <Grid Grid.Column="0">
+                                                    <TextBlock Text="搜索" FontStyle="Italic" Foreground="#AAAAAA" VerticalAlignment="Center"
+                                                               Margin="6,0,0,0" IsHitTestVisible="False" Visibility="Visible" x:Name="SearchPlaceholder"/>
+                                                    <TextBox x:Name="SearchBox" BorderThickness="0" Background="Transparent"
+                                                             VerticalAlignment="Center" FontSize="10" Foreground="#1A1A1A"
+                                                             Padding="6,0,2,0" TextChanged="SearchBox_TextChanged"/>
+                                                </Grid>
+                                                <Button Grid.Column="1" x:Name="SearchBtn" Width="26" Height="24"
+                                                        Click="Search_Click" Margin="1" Padding="0"
+                                                        Background="Transparent" BorderThickness="0" Cursor="Hand">
+                                                    <TextBlock Text="&#xE11A;" FontFamily="Segoe MDL2 Assets" FontSize="11" Foreground="#555555"/>
+                                                </Button>
+                                            </Grid>
+                                        </Border>
 
-                        <Border Grid.Row="1" x:Name="SearchBorder"
-                                Background="White" BorderBrush="#D0D0D0"
-                                BorderThickness="1" CornerRadius="3" Height="26" Margin="0,0,0,6"
-                                MouseEnter="SearchBorder_MouseEnter"
-                                MouseLeave="SearchBorder_MouseLeave"
-                                GotFocus="SearchBorder_GotFocus"
-                                LostFocus="SearchBorder_LostFocus"
-                                MouseDown="SearchBorder_MouseDown">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <Grid Grid.Column="0">
-                                    <TextBlock Text="搜索" FontStyle="Italic" Foreground="#AAAAAA"
-                                               VerticalAlignment="Center" Margin="6,0,0,0"
-                                               IsHitTestVisible="False"
-                                               Visibility="Visible" x:Name="SearchPlaceholder"/>
-                                    <TextBox x:Name="SearchBox" BorderThickness="0"
-                                             Background="Transparent" VerticalAlignment="Center"
-                                             FontSize="10" Foreground="#1A1A1A"
-                                             Padding="6,0,2,0"
-                                             TextChanged="SearchBox_TextChanged"/>
-                                </Grid>
-                                <Button Grid.Column="1" x:Name="SearchBtn" Width="26" Height="24"
-                                        Click="Search_Click" Margin="1" Padding="0"
-                                        Background="Transparent" BorderThickness="0" Cursor="Hand">
-                                    <TextBlock Text="&#xE11A;" FontFamily="Segoe MDL2 Assets" FontSize="11"
-                                               Foreground="#555555"/>
-                                </Button>
-                            </Grid>
-                        </Border>
+                                        <Grid Grid.Row="1" Margin="0,0,0,6">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="2"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0" x:Name="BtnSpatial" Content="空间数据管理" Click="SwitchToSpatial" Height="26" FontSize="10" Padding="8,0">
+                                                <Button.Style>
+                                                    <Style TargetType="Button">
+                                                        <Setter Property="Background" Value="#1565C0"/>
+                                                        <Setter Property="Foreground" Value="White"/>
+                                                        <Setter Property="BorderThickness" Value="0"/>
+                                                        <Setter Property="Cursor" Value="Hand"/>
+                                                        <Setter Property="Template">
+                                                            <Setter.Value>
+                                                                <ControlTemplate TargetType="Button">
+                                                                    <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                    </Border>
+                                                                </ControlTemplate>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </Style>
+                                                </Button.Style>
+                                            </Button>
+                                            <Button Grid.Column="2" x:Name="BtnAttribute" Content="属性数据管理" Click="SwitchToAttribute" Height="26" FontSize="10" Padding="8,0">
+                                                <Button.Style>
+                                                    <Style TargetType="Button">
+                                                        <Setter Property="Background" Value="#E8E8E8"/>
+                                                        <Setter Property="Foreground" Value="#555555"/>
+                                                        <Setter Property="BorderThickness" Value="0"/>
+                                                        <Setter Property="Cursor" Value="Hand"/>
+                                                        <Setter Property="Template">
+                                                            <Setter.Value>
+                                                                <ControlTemplate TargetType="Button">
+                                                                    <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                    </Border>
+                                                                </ControlTemplate>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </Style>
+                                                </Button.Style>
+                                            </Button>
+                                        </Grid>
 
-                        <Grid Grid.Row="2" Margin="0,0,0,6">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/><ColumnDefinition Width="2"/><ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <Button Grid.Column="0" x:Name="BtnSpatial" Content="空间数据管理"
-                                    Click="SwitchToSpatial" Height="26" FontSize="10" Padding="8,0">
-                                <Button.Style>
-                                    <Style TargetType="Button">
-                                        <Setter Property="Background" Value="#1565C0"/>
-                                        <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="BorderThickness" Value="0"/>
-                                        <Setter Property="Cursor" Value="Hand"/>
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <ControlTemplate TargetType="Button">
-                                                    <Border Background="{TemplateBinding Background}"
-                                                            CornerRadius="3" Padding="{TemplateBinding Padding}">
-                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                    </Border>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
-                            <Button Grid.Column="2" x:Name="BtnAttribute" Content="属性数据管理"
-                                    Click="SwitchToAttribute" Height="26" FontSize="10" Padding="8,0">
-                                <Button.Style>
-                                    <Style TargetType="Button">
-                                        <Setter Property="Background" Value="#E8E8E8"/>
-                                        <Setter Property="Foreground" Value="#555555"/>
-                                        <Setter Property="BorderThickness" Value="0"/>
-                                        <Setter Property="Cursor" Value="Hand"/>
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <ControlTemplate TargetType="Button">
-                                                    <Border Background="{TemplateBinding Background}"
-                                                            CornerRadius="3" Padding="{TemplateBinding Padding}">
-                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                    </Border>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
-                        </Grid>
-
-                                                <TreeView Grid.Row="3" x:Name="DataTree" BorderThickness="0"
-                                  Background="Transparent" FontSize="12">
-                            <TreeView.ItemContainerStyle>
-                                <Style TargetType="TreeViewItem">
-                                    <Setter Property="Foreground" Value="#333333"/>
-                                    <Setter Property="Padding" Value="1,2"/>
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="TreeViewItem">
-                                                <StackPanel>
-                                                    <Border x:Name="Bd" Background="Transparent"
-                                                            Padding="{TemplateBinding Padding}" CornerRadius="2">
-                                                        <Grid>
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="16"/>
-                                                                <ColumnDefinition Width="*"/>
-                                                            </Grid.ColumnDefinitions>
-                                                            <ToggleButton x:Name="Expander" Grid.Column="0"
-                                                                          ClickMode="Press"
-                                                                          IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
-                                                                          Width="14" Height="14" Margin="0,0,2,0">
-                                                                <ToggleButton.Template>
-                                                                    <ControlTemplate TargetType="ToggleButton">
-                                                                        <Border Background="Transparent" Width="14" Height="14">
-                                                                            <TextBlock x:Name="Arrow" Text="▶"
-                                                                                       FontSize="8" Foreground="#666666"
-                                                                                       HorizontalAlignment="Center"
-                                                                                       VerticalAlignment="Center"/>
-                                                                        </Border>
-                                                                        <ControlTemplate.Triggers>
-                                                                            <Trigger Property="IsChecked" Value="True">
-                                                                                <Setter TargetName="Arrow" Property="Text" Value="▼"/>
-                                                                            </Trigger>
-                                                                        </ControlTemplate.Triggers>
-                                                                    </ControlTemplate>
-                                                                </ToggleButton.Template>
-                                                            </ToggleButton>
-                                                            <ContentPresenter x:Name="PART_Header" Grid.Column="1"
-                                                                              ContentSource="Header"
-                                                                              VerticalAlignment="Center"/>
-                                                        </Grid>
-                                                    </Border>
-                                                    <ItemsPresenter x:Name="ItemsHost" Margin="16,0,0,0"
-                                                                    Visibility="Collapsed"/>
-                                                </StackPanel>
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsExpanded" Value="True">
-                                                        <Setter TargetName="ItemsHost" Property="Visibility" Value="Visible"/>
-                                                    </Trigger>
-                                                    <Trigger Property="HasItems" Value="False">
-                                                        <Setter TargetName="Expander" Property="Visibility" Value="Hidden"/>
-                                                    </Trigger>
-                                                    <Trigger SourceName="Bd" Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="Bd" Property="Background" Value="#F0F0F0"/>
-                                                    </Trigger>
-                                                    <Trigger Property="IsSelected" Value="True">
-                                                        <Setter TargetName="Bd" Property="Background" Value="#E6EDF5"/>
-                                                        <Setter Property="Foreground" Value="#1565C0"/>
-                                                    </Trigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                </Style>
-                            </TreeView.ItemContainerStyle>
-                        </TreeView>
-                    </Grid>
-                </Border>
-
-                <GridSplitter x:Name="LeftSplitter" Grid.Column="1" Width="4"
-                              Background="Transparent"
-                              HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                              ResizeBehavior="PreviousAndNext"/>
-
-                <!-- 地图视图 / 分析面板 -->
-                <Border Grid.Column="2" Background="White">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-                        <!-- Map header -->
-                        <Border Grid.Row="0" Background="White" Padding="8,5">
-                            <TextBlock Text="地图视图" FontWeight="SemiBold" FontSize="12" Foreground="#1A1A1A"/>
-                        </Border>
-                        <!-- Map content area -->
-                        <Grid Grid.Row="1">
-                            <views:MapView x:Name="MapViewControl" />
-                            <Grid x:Name="AnalysisHost"/>
-                        </Grid>
-                    </Grid>
-                </Border>
-
-                <GridSplitter x:Name="RightOuterSplitter" Grid.Column="3" Width="4"
-                              Background="Transparent"
-                              HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                              ResizeBehavior="PreviousAndNext"/>
-
-                <!-- 右侧面板区：图层面板 + 分隔条 + 符号系统面板 -->
-                <Grid Grid.Column="4" Margin="0,2,6,4" x:Name="RightPanelGrid">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*" MinHeight="100"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                <!-- 图层面板 -->
-                <Border Grid.Row="0"
-                        Style="{StaticResource PanelBorderStyle}"
-                        MouseDown="LayerPanel_GotFocus">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-
-                        <Grid Grid.Row="0" Margin="0,0,0,6">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="图层"
-                                       Style="{StaticResource PanelTitleStyle}"/>
-                            <StackPanel Grid.Column="2" Orientation="Horizontal">
-                                <Button Style="{StaticResource PanelIconBtnStyle}"
-                                        Click="LayerOptions_Click" ToolTip="选项">
-                                    <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets"
-                                               FontSize="8" Foreground="#444444"/>
-                                </Button>
-                                <Button Style="{StaticResource PanelIconBtnStyle}"
-                                        Click="LayerAutoHide_Click" ToolTip="自动隐藏">
-                                    <TextBlock Text="&#xE77A;" FontFamily="Segoe MDL2 Assets"
-                                               FontSize="10" Foreground="#444444"/>
-                                </Button>
-                                <Button Style="{StaticResource PanelIconBtnStyle}"
-                                        Click="LayerPanelClose_Click" ToolTip="关闭面板">
-                                    <TextBlock Text="&#xE8BB;" FontFamily="Segoe MDL2 Assets"
-                                               FontSize="10" Foreground="#444444"/>
-                                </Button>
-                            </StackPanel>
-                        </Grid>
-
-                        <TreeView Grid.Row="1" x:Name="LayerTreeView"
-                                  Background="Transparent" BorderThickness="0"
-                                  FontSize="11" AllowDrop="True"
-                                  ScrollViewer.VerticalScrollBarVisibility="Auto">
-                            <TreeView.ItemContainerStyle>
-                                <Style TargetType="TreeViewItem">
-                                    <Setter Property="IsExpanded" Value="False"/>
-                                    <Setter Property="Padding" Value="1,2"/>
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="TreeViewItem">
-                                                <StackPanel>
-                                                    <Border x:Name="Bd" Background="Transparent"
-                                                            BorderBrush="Transparent"
-                                                            BorderThickness="1" CornerRadius="2"
-                                                            Padding="2,2">
-                                                        <Grid>
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="16"/>
-                                                                <ColumnDefinition Width="Auto"/>
-                                                                <ColumnDefinition Width="*"/>
-                                                            </Grid.ColumnDefinitions>
-                                                            <ToggleButton x:Name="Expander" Grid.Column="0"
-                                                                          ClickMode="Press"
-                                                                          IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
-                                                                          Width="14" Height="14">
-                                                                <ToggleButton.Template>
-                                                                    <ControlTemplate TargetType="ToggleButton">
-                                                                        <Border Background="Transparent"
-                                                                                Width="14" Height="14">
-                                                                            <TextBlock x:Name="Arrow" Text="▶"
-                                                                                       FontSize="8" Foreground="#666"
-                                                                                       HorizontalAlignment="Center"
-                                                                                       VerticalAlignment="Center"/>
-                                                                        </Border>
-                                                                        <ControlTemplate.Triggers>
-                                                                            <Trigger Property="IsChecked" Value="True">
-                                                                                <Setter TargetName="Arrow" Property="Text" Value="▼"/>
-                                                                            </Trigger>
-                                                                        </ControlTemplate.Triggers>
-                                                                    </ControlTemplate>
-                                                                </ToggleButton.Template>
-                                                            </ToggleButton>
-                                                            <ContentPresenter x:Name="PART_Header"
-                                                                              Grid.Column="2"
-                                                                              ContentSource="Header"
-                                                                              VerticalAlignment="Center"
-                                                                              Margin="2,0,0,0"/>
-                                                        </Grid>
-                                                    </Border>
-                                                    <ItemsPresenter x:Name="ItemsHost"
-                                                                    Margin="16,0,0,0"
-                                                                    Visibility="Collapsed"/>
-                                                </StackPanel>
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsExpanded" Value="True">
-                                                        <Setter TargetName="ItemsHost" Property="Visibility" Value="Visible"/>
-                                                    </Trigger>
-                                                    <Trigger Property="HasItems" Value="False">
-                                                        <Setter TargetName="Expander" Property="Visibility" Value="Hidden"/>
-                                                    </Trigger>
-                                                    <MultiTrigger>
-                                                        <MultiTrigger.Conditions>
-                                                            <Condition SourceName="Bd" Property="IsMouseOver" Value="True"/>
-                                                            <Condition Property="IsSelected" Value="False"/>
-                                                        </MultiTrigger.Conditions>
-                                                        <Setter TargetName="Bd" Property="Background" Value="#E6EDF5"/>
-                                                        <Setter TargetName="Bd" Property="BorderBrush" Value="Transparent"/>
-                                                    </MultiTrigger>
-                                                    <Trigger Property="IsSelected" Value="True">
-                                                        <Setter TargetName="Bd" Property="Background" Value="#E6EDF5"/>
-                                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#1565C0"/>
-                                                        <Setter Property="Foreground" Value="#1565C0"/>
-                                                    </Trigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                </Style>
-                            </TreeView.ItemContainerStyle>
-                            <TreeView.ItemTemplate>
-                                <HierarchicalDataTemplate ItemsSource="{Binding Symbols}">
-                                    <HierarchicalDataTemplate.ItemTemplate>
-                                        <DataTemplate>
-                                            <ContentControl Cursor="Hand"
-                                                            Background="Transparent"
-                                                            Margin="8,2,0,2"
-                                                            PreviewMouseLeftButtonDown="SymbolItem_Click"
-                                                            Content="{Binding Converter={x:Static views:SymbolPreviewConverter.Instance}}"
-                                                            HorizontalAlignment="Left"
-                                                            VerticalAlignment="Center"/>
-                                        </DataTemplate>
-                                    </HierarchicalDataTemplate.ItemTemplate>
-                                    <Grid Background="Transparent">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <CheckBox Grid.Column="0"
-                                                  VerticalAlignment="Center"
-                                                  IsChecked="{Binding IsVisible, Mode=TwoWay}"
-                                                  Width="16" Height="16" Margin="2,0,6,0"
-                                                  Checked="LayerCheckBox_Changed"
-                                                  Unchecked="LayerCheckBox_Changed"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding Name}"
-                                                   VerticalAlignment="Center"
-                                                   Foreground="#333"
-                                                   TextTrimming="CharacterEllipsis"/>
+                                        <TreeView Grid.Row="2" x:Name="DataTree" BorderThickness="0" Background="Transparent" FontSize="12"
+                                                  ItemContainerStyle="{StaticResource DataTreeItemStyle}"/>
                                     </Grid>
-                                </HierarchicalDataTemplate>
-                            </TreeView.ItemTemplate>
-                        </TreeView>
+                                </Border>
+                            </avalonDock:LayoutAnchorable>
+                        </avalonDock:LayoutAnchorablePane>
 
-                    </Grid>
-                </Border>
+                        <!-- ====== 中间：地图区 ====== -->
+                        <avalonDock:LayoutDocumentPane>
+                            <avalonDock:LayoutDocument Title="地图视图" CanClose="False" ContentId="MapView">
+                                <views:MapView x:Name="MapViewControl"/>
+                            </avalonDock:LayoutDocument>
+                        </avalonDock:LayoutDocumentPane>
 
-                <!-- 图层面板与符号面板之间的分隔条 -->
-                <GridSplitter Grid.Row="1" x:Name="RightSplitter" Height="4"
-                              HorizontalAlignment="Stretch" VerticalAlignment="Center"
-                              Background="Transparent" ResizeBehavior="PreviousAndNext"
-                              Visibility="Collapsed"/>
+                        <!-- ====== 右侧：图层面板 + 符号面板 + 地理处理面板 ====== -->
+                        <avalonDock:LayoutAnchorablePane DockWidth="220" DockMinWidth="150">
 
-                <!-- 符号系统面板 -->
-                <Border Grid.Row="2" x:Name="SymbolPanelHost" Visibility="Collapsed"
-                        Style="{StaticResource PanelBorderStyle}" Margin="0,4,0,0"
-                        MouseDown="SymbolPanel_GotFocus">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
+                            <!-- 图层面板 -->
+                            <avalonDock:LayoutAnchorable x:Name="LayerPanelAnchor" Title="图层" CanClose="False" ContentId="LayerPanel">
+                                <TreeView x:Name="LayerTreeView" Background="Transparent" BorderThickness="0"
+                                          FontSize="11" AllowDrop="True" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                          ItemContainerStyle="{StaticResource LayerTreeItemStyle}"
+                                          ItemTemplate="{StaticResource LayerTreeTemplate}"/>
+                            </avalonDock:LayoutAnchorable>
 
-                        <Grid Grid.Row="0" Margin="0,0,0,6">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" x:Name="SymbolPanelTitle"
-                                       Text="符号系统"
-                                       Style="{StaticResource PanelTitleStyle}"/>
-                            <StackPanel Grid.Column="2" Orientation="Horizontal">
-                                <Button Style="{StaticResource PanelIconBtnStyle}"
-                                        Click="SymbolOptions_Click" ToolTip="选项">
-                                    <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets"
-                                               FontSize="8" Foreground="#444444"/>
-                                </Button>
-                                <Button Style="{StaticResource PanelIconBtnStyle}"
-                                        Click="SymbolAutoHide_Click" ToolTip="自动隐藏">
-                                    <TextBlock Text="&#xE77A;" FontFamily="Segoe MDL2 Assets"
-                                               FontSize="10" Foreground="#444444"/>
-                                </Button>
-                                <Button Style="{StaticResource PanelIconBtnStyle}"
-                                        Click="SymbolPanelClose_Click" ToolTip="关闭面板">
-                                    <TextBlock Text="&#xE8BB;" FontFamily="Segoe MDL2 Assets"
-                                               FontSize="10" Foreground="#444444"/>
-                                </Button>
-                            </StackPanel>
-                        </Grid>
+                            <!-- 符号面板 -->
+                            <avalonDock:LayoutAnchorable x:Name="SymbolPanelAnchor" Title="符号系统" ContentId="SymbolPanel">
+                                <StackPanel x:Name="SymbolEditorHost" Margin="0,0,0,4"/>
+                            </avalonDock:LayoutAnchorable>
 
-                        <StackPanel Grid.Row="1" x:Name="SymbolEditorHost" Margin="0,0,0,4"/>
-                    </Grid>
-                </Border>
+                            <!-- 地理处理面板 -->
+                            <avalonDock:LayoutAnchorable x:Name="GeoPanelAnchor" Title="地理处理" ContentId="GeoPanel">
+                                <ContentControl x:Name="GeoPanelContent"/>
+                            </avalonDock:LayoutAnchorable>
 
-                <!-- 符号面板与地理处理面板之间的分隔条 -->
-                <GridSplitter Grid.Row="3" x:Name="GeoSplitter" Height="4"
-                              HorizontalAlignment="Stretch" VerticalAlignment="Center"
-                              Background="Transparent" ResizeBehavior="PreviousAndNext"
-                              Visibility="Collapsed"/>
+                        </avalonDock:LayoutAnchorablePane>
 
-                <!-- 地理处理面板 -->
-                <Border Grid.Row="4" x:Name="GeoPanelHost" Visibility="Collapsed"
-                        Style="{StaticResource PanelBorderStyle}" Margin="0,4,0,0"
-                        MouseDown="GeoPanel_GotFocus">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-
-                        <Grid Grid.Row="0" Margin="0,0,0,6">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="地理处理"
-                                       Style="{StaticResource PanelTitleStyle}"/>
-                            <StackPanel Grid.Column="2" Orientation="Horizontal">
-                                <Button Style="{StaticResource PanelIconBtnStyle}"
-                                        Click="GeoOptions_Click" ToolTip="选项">
-                                    <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets"
-                                               FontSize="8" Foreground="#444444"/>
-                                </Button>
-                                <Button Style="{StaticResource PanelIconBtnStyle}"
-                                        Click="GeoAutoHide_Click" ToolTip="自动隐藏">
-                                    <TextBlock Text="&#xE77A;" FontFamily="Segoe MDL2 Assets"
-                                               FontSize="10" Foreground="#444444"/>
-                                </Button>
-                                <Button Style="{StaticResource PanelIconBtnStyle}"
-                                        Click="GeoPanelClose_Click" ToolTip="关闭面板">
-                                    <TextBlock Text="&#xE8BB;" FontFamily="Segoe MDL2 Assets"
-                                               FontSize="10" Foreground="#444444"/>
-                                </Button>
-                            </StackPanel>
-                        </Grid>
-
-                        <ContentControl Grid.Row="1" x:Name="GeoPanelContent"
-                                        Margin="0,0,0,4"/>
-                    </Grid>
-                </Border>
-            </Grid>
-            </Grid>
+                    </avalonDock:LayoutPanel>
+                </avalonDock:LayoutRoot>
+            </avalonDock:DockingManager>
 
             <!-- 状态栏 -->
             <StatusBar Grid.Row="3" Background="#F2F2F2" Padding="6,2" FontSize="10">

@@ -13,6 +13,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Dirkster.AvalonDock" Version="4.74.1" />
+    <PackageReference Include="Dirkster.AvalonDock.Themes.VS2013" Version="4.74.1" />
     <PackageReference Include="Emoji.Wpf" Version="0.3.4" />
     <PackageReference Include="Esri.ArcGISRuntime.Toolkit.WPF" Version="200.6.0" />
     <PackageReference Include="Esri.ArcGISRuntime.WPF" Version="200.6.0" />

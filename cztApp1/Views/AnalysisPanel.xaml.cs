@@ -10,7 +10,7 @@ namespace cztApp1.Views
     public partial class AnalysisPanel : UserControl
     {
         private readonly GeoAnalysisService _service = new();
-        private ModuleInfo _module = ModuleRegistry.Geology;
+        private ModuleInfo _module = ModuleRegistry.SoilTypeAnalysis;
         private List<GeoParameter> _params = new();
         private List<StatResult>? _lastResults;
         public event Action? Closed;
