@@ -349,25 +349,25 @@
                                 <StackPanel Orientation="Horizontal">
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="ImportData">
                                         <StackPanel>
-                                            <TextBlock Style="{StaticResource RbnIcon}" Text="&#xE838;" Foreground="#1565C0"/>
+                                            <ContentControl Content="{StaticResource IconImport}" Margin="0,0,0,2"/>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="导入数据"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="SpatialQuery">
                                         <StackPanel>
-                                            <TextBlock Style="{StaticResource RbnIcon}" Text="&#xE721;" Foreground="#1565C0"/>
+                                            <ContentControl Content="{StaticResource IconSpatialQuery}" Margin="0,0,0,2"/>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="空间查询"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="SpatialAnalysis">
                                         <StackPanel>
-                                            <TextBlock Style="{StaticResource RbnIcon}" Text="&#xE947;" Foreground="#1565C0"/>
+                                            <ContentControl Content="{StaticResource IconSpatialAnalysis}" Margin="0,0,0,2"/>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="空间分析"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="Mapping">
                                         <StackPanel>
-                                            <TextBlock Style="{StaticResource RbnIcon}" Text="&#xE78C;" Foreground="#1565C0"/>
+                                            <ContentControl Content="{StaticResource IconMapping}" Margin="0,0,0,2"/>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="制图"/>
                                         </StackPanel>
                                     </Button>
@@ -383,19 +383,19 @@
                                 <StackPanel Orientation="Horizontal">
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="AttributeBrowse">
                                         <StackPanel>
-                                            <TextBlock Style="{StaticResource RbnIcon}" Text="&#xE6B1;" Foreground="#1565C0"/>
+                                            <ContentControl Content="{StaticResource IconAttrBrowse}" Margin="0,0,0,2"/>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="属性浏览"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="AttributeQuery">
                                         <StackPanel>
-                                            <TextBlock Style="{StaticResource RbnIcon}" Text="&#xE90D;" Foreground="#1565C0"/>
+                                            <ContentControl Content="{StaticResource IconAttrQuery}" Margin="0,0,0,2"/>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="属性查询"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="AttributeManage">
                                         <StackPanel>
-                                            <TextBlock Style="{StaticResource RbnIcon}" Text="&#xE104;" Foreground="#1565C0"/>
+                                            <ContentControl Content="{StaticResource IconAttrManage}" Margin="0,0,0,2"/>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="属性管理"/>
                                         </StackPanel>
                                     </Button>
@@ -414,31 +414,31 @@
                                 <StackPanel Orientation="Horizontal">
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="SoilTypeAnalysis">
                                         <StackPanel>
-                                            <TextBlock Style="{StaticResource RbnIcon}" Text="&#xEDB5;" Foreground="#795548"/>
+                                            <ContentControl Content="{StaticResource IconSoilType}" Margin="0,0,0,2"/>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="土壤类型"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="SoilMoisture">
                                         <StackPanel>
-                                            <TextBlock Style="{StaticResource RbnIcon}" Text="&#xE787;" Foreground="#0288D1"/>
+                                            <ContentControl Content="{StaticResource IconSoilMoisture}" Margin="0,0,0,2"/>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="土壤湿度"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="VegType">
                                         <StackPanel>
-                                            <TextBlock Style="{StaticResource RbnIcon}" Text="&#xE8BE;" Foreground="#2E7D32"/>
+                                            <ContentControl Content="{StaticResource IconVegType}" Margin="0,0,0,2"/>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="植被类型"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="VegCoverage">
                                         <StackPanel>
-                                            <TextBlock Style="{StaticResource RbnIcon}" Text="&#xE984;" Foreground="#43A047"/>
+                                            <ContentControl Content="{StaticResource IconVegCoverage}" Margin="0,0,0,2"/>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="植被覆盖度"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="NDVI">
                                         <StackPanel>
-                                            <TextBlock Style="{StaticResource RbnIcon}" Text="&#xE948;" Foreground="#E53935"/>
+                                            <ContentControl Content="{StaticResource IconNDVI}" Margin="0,0,0,2"/>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="NDVI"/>
                                         </StackPanel>
                                     </Button>
@@ -457,19 +457,19 @@
                                 <StackPanel Orientation="Horizontal">
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="StatChart">
                                         <StackPanel>
-                                            <TextBlock Style="{StaticResource RbnIcon}" Text="&#xE947;" Foreground="#1565C0"/>
+                                            <ContentControl Content="{StaticResource IconStatChart}" Margin="0,0,0,2"/>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="统计图"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="StatTable">
                                         <StackPanel>
-                                            <TextBlock Style="{StaticResource RbnIcon}" Text="&#xE6B1;" Foreground="#1565C0"/>
+                                            <ContentControl Content="{StaticResource IconStatTable}" Margin="0,0,0,2"/>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="统计表"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Style="{StaticResource RbnBtn}" Click="OpenTool_Click" Tag="ThematicMap">
                                         <StackPanel>
-                                            <TextBlock Style="{StaticResource RbnIcon}" Text="&#xE78C;" Foreground="#1565C0"/>
+                                            <ContentControl Content="{StaticResource IconThematicMap}" Margin="0,0,0,2"/>
                                             <TextBlock Style="{StaticResource RbnLabel}" Text="专题图"/>
                                         </StackPanel>
                                     </Button>
